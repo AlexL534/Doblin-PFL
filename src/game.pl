@@ -22,19 +22,19 @@ main_menu :-
 
 % Configures the game based on the menu selection.
 configure_game(1, Size, config(human, human, _Level1, _Level2)) :-
-write('Human vs Human selected.'), nl.
+    write('Human vs Human selected.'), nl.
 
 configure_game(2, config(human, computer, Level, _Level2)) :-
-write('Human vs Computer selected.'), nl,
-write('Choose computer difficulty (1: Easy, 2: Hard): '),
-read(Level).
+    write('Human vs Computer selected.'), nl,
+    write('Choose computer difficulty (1: Easy, 2: Hard): '),
+    read(Level).
 
 configure_game(3, config(computer, computer, Level1, Level2)) :-
-write('Computer vs Computer selected.'), nl,
-write('Choose difficulty for Computer 1 (1: Easy, 2: Hard): '),
-read(Level1),
-write('Choose difficulty for Computer 2 (1: Easy, 2: Hard): '),
-read(Level2).
+    write('Computer vs Computer selected.'), nl,
+    write('Choose difficulty for Computer 1 (1: Easy, 2: Hard): '),
+    read(Level1),
+    write('Choose difficulty for Computer 2 (1: Easy, 2: Hard): '),
+    read(Level2).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Initialization and State
@@ -88,9 +88,9 @@ print_row(Row) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Executes a move if valid and updates the game state.
-move(game_state(Grid1, Grid2, Player1, Player2, RowMapping, ColMapping), Move, game_state(NewGrid1, NewGrid2, Player2, Player1, RowMapping, ColMapping)) :-
-    validate_move(Grid1, Move),
-    place_symbol(Grid1, Grid2, Move.row, Move.col, Player1, RowMapping, ColMapping, NewGrid1, NewGrid2).
+move(game_state(Grid1, Grid2, Player1, Player2, RowMapping, ColMapping), move(Row, Col), game_state(NewGrid1, NewGrid2, Player2, Player1, RowMapping, ColMapping)) :-
+    validate_move(Grid1, move(Row, Col)),
+    place_symbol(Grid1, Grid2, Row, Col, Player1, RowMapping, ColMapping, NewGrid1, NewGrid2).
 
 % Places a symbol on both grids according to the mappings.
 place_symbol(Grid1, Grid2, Row, Col, Symbol, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
@@ -118,7 +118,6 @@ translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, Translate
 % Returns all valid moves for the current game state.
 valid_moves(game_state(Grid1, _, _, _, _, _), ListOfMoves) :-
     findall(move(Row, Col), validate_move(Grid1, move(Row, Col)), ListOfMoves).
-
 
 % Checks if the game is over and determines the winner
 game_over(game_state(Grid1, Grid2, _, _, _, _), Winner) :-
@@ -154,7 +153,6 @@ current_player_turn(game_state(Board, CurrentPlayer, Captured), NewGameState) :-
         read_move(Move);
         choose_move(game_state(Board, CurrentPlayer, Captured), 2, Move)),
     move(game_state(Board, CurrentPlayer, Captured), Move, NewGameState).
-
 
 % Placeholder predicates for required logic (to be implemented):
 % validate_move/2, winning_condition/1, draw_condition/2, evaluate_board/3
