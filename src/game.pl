@@ -6,19 +6,24 @@ play :-
 % Game Menu and Configuration
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Displays the game menu and allows the players to configure game type, board size and AI difficulty levels
+% Displays the game menu and allows the players to configure game type, board size, and AI difficulty levels
 main_menu :-
     write('Welcome to Doblin!'), nl,
-    write('Choose grid size (e.g., 6 for 6x6): '),
+    write('Choose grid size (between 6 and 10): '),
     read(Size),
-    write('1. Human vs Human'), nl,
-    write('2. Human vs Computer'), nl,
-    write('3. Computer vs Computer'), nl,
-    write('Choose an option: '),
-    read(Choice),
-    configure_game(Choice, Size, GameConfig),
-    initial_state(GameConfig, GameState),
-    game_loop(GameState).
+    (   Size >= 6, Size =< 10  % Checks if the size is between 6 and 10
+    ->  format('Grid size: ~w~n', [Size]),
+        write('1. Human vs Human'), nl,
+        write('2. Human vs Computer'), nl,
+        write('3. Computer vs Computer'), nl,
+        write('Choose an option: '), nl,
+        read(Choice),
+        configure_game(Choice, Size, GameConfig),
+        initial_state(GameConfig, GameState),
+        game_loop(GameState)
+    ;   write('Invalid grid size! Please choose a size between 6 and 10.'), nl,
+        main_menu  % Retry if size is invalid
+    ).
 
 % Configures the game based on the menu selection.
 configure_game(1, Size, config(human, human, _Level1, _Level2)) :-
