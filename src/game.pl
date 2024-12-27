@@ -1,3 +1,8 @@
+% -*- Prolog -*-
+
+:- use_module(library(lists)).
+:- use_module(library(random)).
+
 % Gives access to the game menu
 play :-
     main_menu.
@@ -11,14 +16,14 @@ main_menu :-
     write('Welcome to Doblin!'), nl,
     write('Choose grid size (between 6 and 10): '),
     read(Size),
-    (   Size >= 6, Size =< 10  % Checks if the size is between 6 and 10
+    (   Size >= 6, Size =< 10
     ->  format('Grid size: ~w~n', [Size]),
         write('1. Human vs Human'), nl,
         write('2. Human vs Computer'), nl,
         write('3. Computer vs Computer'), nl,
         write('Choose an option: '), nl,
         read(Choice),
-        configure_game(Choice, GameConfig),
+        configure_game(Choice, Size, GameConfig),
         initial_state(GameConfig, GameState),
         game_loop(GameState)
     ;   write('Invalid grid size! Please choose a size between 6 and 10.'), nl,
@@ -26,20 +31,21 @@ main_menu :-
     ).
 
 % Configures the game based on the menu selection.
-configure_game(1, config(human, human)) :-
+configure_game(1, Size, config(human, human, _, _, Size)) :-
     write('Human vs Human selected.'), nl.
 
-configure_game(2, config(human, computer, Level)) :-
+configure_game(2, Size, config(human, computer, Level, _, Size)) :-
     write('Human vs Computer selected.'), nl,
     write('Choose computer difficulty (1: Easy, 2: Hard): '),
     read(Level).
 
-configure_game(3, config(computer, computer, Level1, Level2)) :-
+configure_game(3, Size, config(computer, computer, Level1, Level2, Size)) :-
     write('Computer vs Computer selected.'), nl,
     write('Choose difficulty for Computer 1 (1: Easy, 2: Hard): '),
     read(Level1),
     write('Choose difficulty for Computer 2 (1: Easy, 2: Hard): '),
     read(Level2).
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Initialization and State
@@ -55,11 +61,13 @@ initialize_grids(Size, Grid1, Grid2, RowMapping, ColMapping) :-
     create_empty_grid(Size, Grid2),
     generate_mappings(Size, RowMapping, ColMapping).
 
-% Creates an empty grid of the specified size.
+% Creates an empty grid of the specified size, filled with '_'
 create_empty_grid(Size, Grid) :-
     length(Grid, Size),
-    maplist(length_(Size), Grid).
+    maplist(length_(Size), Grid),
+    maplist(maplist(=( '_ ')), Grid).  % Initialize each cell with '_'
 
+% Helper predicate to define list length for rows
 length_(Size, List) :-
     length(List, Size).
 
@@ -73,20 +81,29 @@ generate_mappings(Size, RowMapping, ColMapping) :-
 % Game Display
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Displays the current game state, including both grids and the current player.
+% Display the current game state (both grids side by side)
 display_game(game_state(Grid1, Grid2, CurrentPlayer, _, _, _)) :-
-    write('Grid 1:'), nl,
-    print_board(Grid1),
-    write('Grid 2:'), nl,
-    print_board(Grid2),
+    write('Grid 1 and Grid 2: '), nl,
+    print_side_by_side(Grid1, Grid2),
     format('Current Player: ~w~n', [CurrentPlayer]).
 
-% Prints the game board.
-print_board(Board) :-
-    maplist(print_row, Board).
+% Prints both grids side by side, row by row
+print_side_by_side([], []).
+print_side_by_side([Row1|Rest1], [Row2|Rest2]) :-
+    print_row(Row1, Row2),
+    print_side_by_side(Rest1, Rest2).
 
-print_row(Row) :-
-    maplist(write, Row), nl.
+% Prints a single row from both grids side by side
+print_row(Row1, Row2) :-
+    maplist(print_cell, Row1),
+    write('   '), % Space between the grids
+    maplist(print_cell, Row2),
+    nl.
+
+% Prints each cell (empty or filled)
+print_cell(Cell) :-
+    write(Cell), % Print the cell content, like '_', 'X', 'O'
+    write(' ').
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Move Execution and Validation
