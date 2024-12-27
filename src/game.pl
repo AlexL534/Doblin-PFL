@@ -120,6 +120,52 @@ translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, Translate
 % Game Logic
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% Merge the two grids into a larger one
+combine_grids(Grid1, Grid2, CombinedGrid) :-
+    length(Grid1, Rows),
+    transpose(Grid1, TransposedGrid1),
+    transpose(Grid2, TransposedGrid2),
+    append(TransposedGrid1, TransposedGrid2, CombinedGrid).
+
+% Counts the points for a player (number of lines or squares of 4 consecutive symbols)
+calculate_points(Grid1, Grid2, Player, Points) :-
+    combine_grids(Grid1, Grid2, CombinedGrid),
+    
+    % Count horizontal lines
+    findall(_, (nth1(Row, CombinedGrid, R), count_consecutive(R, Player, 4)), Horizontal),
+    
+    % Count vertical lines
+    transpose(CombinedGrid, TransposedGrid),
+    findall(_, (nth1(Col, TransposedGrid, C), count_consecutive(C, Player, 4)), Vertical),
+    
+    % Count diagonal lines (\ and /)
+    findall(_, (diagonal_lines(CombinedGrid, Player), count_consecutive(_, Player, 4)), Diagonals),
+    
+    length(Horizontal, HorizontalCount),
+    length(Vertical, VerticalCount),
+    length(Diagonals, DiagonalCount),
+    Points is HorizontalCount + VerticalCount + DiagonalCount.
+
+% Count consecutive symbols in a row or column
+count_consecutive([], _, 0).
+count_consecutive([Player|Rest], Player, Count) :-
+    count_consecutive(Rest, Player, RestCount),
+    Count is RestCount + 1.
+count_consecutive([Other|_], Player, 0) :-
+    Other \= Player.
+
+% Find diagonal lines considering both grids
+diagonal_lines(CombinedGrid, Player) :-
+    % You can implement this by checking both \ and / diagonals
+    % across the combined grid. Ensure you check both grids.
+    true.
+
+% Game over condition: Check if the game is a draw
+draw_condition(Grid1, Grid2) :-
+    calculate_points(Grid1, Grid2, player1, Points1),
+    calculate_points(Grid1, Grid2, player2, Points2),
+    Points1 = Points2.
+
 % Returns all valid moves for the current game state.
 valid_moves(game_state(Grid1, _, _, _, _, _), ListOfMoves) :-
     findall(move(Row, Col), validate_move(Grid1, move(Row, Col)), ListOfMoves).
@@ -159,40 +205,6 @@ current_player_turn(game_state(Board, CurrentPlayer, Captured), NewGameState) :-
         choose_move(game_state(Board, CurrentPlayer, Captured), 2, Move)),
     move(game_state(Board, CurrentPlayer, Captured), Move, NewGameState).
 
-
-% Counts the points for a player (number of lines or squares of 4 consecutive symbols)
-calculate_points(Grid, Player, Points) :-
-    % Count horizontal lines
-    findall(_, (nth1(Row, Grid, R), count_consecutive(R, Player, 4)), Horizontal),
-    % Count vertical lines
-    transpose(Grid, TransposedGrid),
-    findall(_, (nth1(Col, TransposedGrid, C), count_consecutive(C, Player, 4)), Vertical),
-    % Count diagonal lines (\ and /)
-    findall(_, (diagonal_lines(Grid, Player), count_consecutive(_, Player, 4)), Diagonals),
-    length(Horizontal, HorizontalCount),
-    length(Vertical, VerticalCount),
-    length(Diagonals, DiagonalCount),
-    Points is HorizontalCount + VerticalCount + DiagonalCount.
-
-% Counts consecutive symbols in a row or column
-count_consecutive([], _, 0).
-count_consecutive([Player|Rest], Player, Count) :-
-    count_consecutive(Rest, Player, RestCount),
-    Count is RestCount + 1.
-count_consecutive([Other|_], Player, 0) :- 
-    Other \= Player.
-
-% Finds diagonal lines, both directions (\ and /)
-diagonal_lines(Grid, Player) :-
-    % Check for diagonals and count consecutive symbols
-    maplist(nth1, DiagonalRows, Grid, List).
-
-% Game over condition: Check if the game is a draw
-draw_condition(Grid1, Grid2) :-
-    calculate_points(Grid1, player1, Points1),
-    calculate_points(Grid2, player2, Points2),
-    Points1 = Points2.
-
 % Placeholder predicates for required logic (to be implemented):
 % validate_move/2, winning_condition/1, evaluate_board/3
-% random_move/2, greedy_move/2, read_move/1
+% random_move/2, greedy_move/2
