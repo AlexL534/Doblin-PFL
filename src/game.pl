@@ -18,7 +18,7 @@ main_menu :-
         write('3. Computer vs Computer'), nl,
         write('Choose an option: '), nl,
         read(Choice),
-        configure_game(Choice, Size, GameConfig),
+        configure_game(Choice, GameConfig),
         initial_state(GameConfig, GameState),
         game_loop(GameState)
     ;   write('Invalid grid size! Please choose a size between 6 and 10.'), nl,
@@ -26,10 +26,10 @@ main_menu :-
     ).
 
 % Configures the game based on the menu selection.
-configure_game(1, Size, config(human, human, _Level1, _Level2)) :-
+configure_game(1, config(human, human)) :-
     write('Human vs Human selected.'), nl.
 
-configure_game(2, config(human, computer, Level, _Level2)) :-
+configure_game(2, config(human, computer, Level)) :-
     write('Human vs Computer selected.'), nl,
     write('Choose computer difficulty (1: Easy, 2: Hard): '),
     read(Level).
@@ -152,7 +152,7 @@ game_loop(GameState) :-
         current_player_turn(GameState, NewGameState),
         game_loop(NewGameState)).
 
-% Handles the current player's turn
+% Handles the current player turn
 current_player_turn(game_state(Board, CurrentPlayer, Captured), NewGameState) :-
     (CurrentPlayer = human ->
         read_move(Move);
