@@ -139,6 +139,7 @@ randomized_row_numbers(Size, RandomizedRowNumbers) :-
 % Print both grids side by side with randomized row numbers for Player 2
 print_side_by_side([], [], _, _).
 print_side_by_side([Row1|Rest1], [Row2|Rest2], RowNumber, [RandomizedRowNum|RestRandomized]) :-
+    format('~d ', [RowNumber]), % Print ordered row number for Player 1
     print_row(Row1),
     write('    '), % Space between grids
     print_row(Row2),
