@@ -86,11 +86,12 @@ display_game(game_state(Grid1, Grid2, CurrentPlayer, _, _, _)) :-
     length(Grid1, Size),  % Get the grid size (assumes square grid)
     write('Grid: '), nl,
     write('   Player 1             Player 2'), nl,  % Label for Player 1 and Player 2
-    generate_column_labels(Size, Player1Labels), % Generate column labels for Player 1
+    randomized_column_labels(Size, Player1Labels), % Generate randomized column labels for Player 1
     randomized_column_labels(Size, Player2Labels),  % Generate randomized column labels for Player 2
     print_column_labels(Player1Labels, Player2Labels),  % Print column labels for both grids
-    randomized_row_numbers(Size, RandomizedRowNumbers),  % Get randomized row numbers for Player 2 grid
-    print_side_by_side(Grid1, Grid2, 1, RandomizedRowNumbers), % Print both grids side by side
+    randomized_row_numbers(Size, Player1RowNumbers),  % Randomized row numbers for Player 1
+    randomized_row_numbers(Size, Player2RowNumbers),  % Randomized row numbers for Player 2
+    print_side_by_side(Grid1, Grid2, Player1RowNumbers, Player2RowNumbers), % Print both grids side by side
     nl, % Blank line between grids
     format('Current Player: ~w~n', [CurrentPlayer]).
 
@@ -138,16 +139,14 @@ randomized_row_numbers(Size, RandomizedRowNumbers) :-
 
 % Print both grids side by side with randomized row numbers for Player 2
 print_side_by_side([], [], _, _).
-print_side_by_side([Row1|Rest1], [Row2|Rest2], RowNumber, [RandomizedRowNum|RestRandomized]) :-
-    format('~d ', [RowNumber]), % Print ordered row number for Player 1
+print_side_by_side([Row1|Rest1], [Row2|Rest2], [Player1RowNum|RestPlayer1Rows], [Player2RowNum|RestPlayer2Rows]) :-
+    format('~d ', [Player1RowNum]), % Print randomized row number for Player 1
     print_row(Row1),
     write('    '), % Space between grids
     print_row(Row2),
-    write('   '), % Space for row numbers
-    format('~d', [RandomizedRowNum]), % Print the randomized row number for Player 2
+    format('~d', [Player2RowNum]), % Print the randomized row number for Player 2
     nl,
-    NextRowNumber is RowNumber + 1,
-    print_side_by_side(Rest1, Rest2, NextRowNumber, RestRandomized).
+    print_side_by_side(Rest1, Rest2, RestPlayer1Rows, RestPlayer2Rows).
 
 % Prints a single row
 print_row([]).
