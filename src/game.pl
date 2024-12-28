@@ -7,9 +7,9 @@
 play :-
     main_menu.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Menu and Configuration
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Displays the game menu and allows the players to configure game type, board size, and AI difficulty levels
 main_menu :-
@@ -31,29 +31,34 @@ main_menu :-
     ).
 
 % Configures the game based on the menu selection.
-configure_game(1, Size, config(human, human, _, _, Size)) :-
-    write('Human vs Human selected.'), nl.
+configure_game(1, Size, config(Name1, Name2, _, _, Size)) :-
+    write('Human vs Human selected.'), nl,
+    write('Enter name for Player 1: '), read(Name1),
+    write('Enter name for Player 2: '), read(Name2),
+    Config = config(Name1, Name2, _, _, Size),
+    write('Config: '), write(Config), nl.
 
-configure_game(2, Size, config(human, computer, Level, _, Size)) :-
+configure_game(2, Size, config(Name1, 'CPU', Level, _, Size)) :-
     write('Human vs Computer selected.'), nl,
+    write('Enter your name: '),
+    read(Name1),
     write('Choose computer difficulty (1: Easy, 2: Hard): '),
     read(Level).
 
-configure_game(3, Size, config(computer, computer, Level1, Level2, Size)) :-
+configure_game(3, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
     write('Computer vs Computer selected.'), nl,
-    write('Choose difficulty for Computer 1 (1: Easy, 2: Hard): '),
-    read(Level1),
-    write('Choose difficulty for Computer 2 (1: Easy, 2: Hard): '),
-    read(Level2).
+    write('Choose difficulty for CPU1 (1: Easy, 2: Hard): '), read(Level1),
+    write('Choose difficulty for CPU2 (1: Easy, 2: Hard): '), read(Level2).
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Initialization and State
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Initializes the game state based on the configuration
-initial_state(config(Player1, Player2, Level1, Level2, Size), game_state(Grid1, Grid2, Player1, Player2, RowMapping, ColMapping)) :-
-    initialize_grids(Size, Grid1, Grid2, RowMapping, ColMapping).
+initial_state(config(Name1, Name2, _, _, Size), game_state(Grid1, Grid2, Name1, Name2, RowMapping, ColMapping)) :-
+    initialize_grids(Size, Grid1, Grid2, RowMapping, ColMapping),
+    format('Initialized State: Player1=~w, Player2=~w~n', [Name1, Name2]).
+
 
 % Initializes two grids and their coordinate mappings.
 initialize_grids(Size, Grid1, Grid2, RowMapping, ColMapping) :-
@@ -77,23 +82,26 @@ generate_mappings(Size, RowMapping, ColMapping) :-
     random_permutation(Base, RowMapping),
     random_permutation(Base, ColMapping).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Display
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Display the current game state (two grids with randomized row numbers on the right for Player 2)
-display_game(game_state(Grid1, Grid2, CurrentPlayer, _, _, _)) :-
+display_game(game_state(Grid1, Grid2, Name1, Name2, CurrentPlayer, _)) :-
     length(Grid1, Size),  % Get the grid size (assumes square grid)
-    write('Grid: '), nl,
-    write('   Player 1             Player 2'), nl,  % Label for Player 1 and Player 2
-    randomized_column_labels(Size, Player1Labels), % Generate randomized column labels for Player 1
-    randomized_column_labels(Size, Player2Labels),  % Generate randomized column labels for Player 2
+    write('Grids:'), nl,
+    format('   ~w             ~w~n', [Name1, Name2]),  % Use the players names
+    generate_column_labels(Size, Player1Labels),  % Generate column labels for Player 1
+    generate_column_labels(Size, Player2Labels),  % Generate column labels for Player 2
     print_column_labels(Player1Labels, Player2Labels),  % Print column labels for both grids
-    randomized_row_numbers(Size, Player1RowNumbers),  % Randomized row numbers for Player 1
-    randomized_row_numbers(Size, Player2RowNumbers),  % Randomized row numbers for Player 2
+    numlist(1, Size, Player1RowNumbers),  % Sequential row numbers for Player 1
+    random_permutation(Player1RowNumbers, Player2RowNumbers),  % Randomized row numbers for Player 2
     print_side_by_side(Grid1, Grid2, Player1RowNumbers, Player2RowNumbers), % Print both grids side by side
     nl, % Blank line between grids
-    format('Current Player: ~w~n', [CurrentPlayer]).
+    (   CurrentPlayer = Name1
+    ->  format('Current Player: ~w~n', [Name1])  % Player 1's turn
+    ;   format('Current Player: ~w~n', [Name2])  % Player 2's turn
+    ).
 
 % Print column labels for both grids
 print_column_labels(Player1Labels, Player2Labels) :-
@@ -130,27 +138,14 @@ generate_column_label(Index, Label) :-
         atom_codes(Label, [First, Second])
     ).
 
-% Generate randomized column labels
-randomized_column_labels(Size, RandomizedLabels) :-
-    generate_column_labels(Size, Labels),
-    random_permutation(Labels, RandomizedLabels).
-
-% Generate randomized row numbers for Player 2 grid
-randomized_row_numbers(Size, RandomizedRowNumbers) :-
-    numlist(1, Size, RowNumbers),  % Create list from 1 to grid size
-    random_permutation(RowNumbers, RandomizedRowNumbers).
-
 % Print both grids side by side with randomized row numbers for Player 2
 print_side_by_side([], [], [], []).
 print_side_by_side([Row1|Rest1], [Row2|Rest2], [Player1RowNum|RestPlayer1Rows], [Player2RowNum|RestPlayer2Rows]) :-
-    % Ensure row numbers are treated as integers
-    RowNum1 is round(Player1RowNum),
-    RowNum2 is round(Player2RowNum),
-    format('~d ', [RowNum1]),  % Print Player 1's row number
+    format('~d ', [Player1RowNum]),  % Print Player 1 row number
     print_row(Row1),  % Print Player 1's row
     write('    '),  % Space between grids
     print_row(Row2),  % Print Player 2's row
-    format('~d', [RowNum2]),  % Print Player 2's row number
+    format(' ~d', [Player2RowNum]),  % Print Player 2 row number
     nl,
     print_side_by_side(Rest1, Rest2, RestPlayer1Rows, RestPlayer2Rows).
 
@@ -160,9 +155,9 @@ print_row([Cell|Rest]) :-
     format('~w ', [Cell]),  % Two spaces after each cell
     print_row(Rest).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Move Execution and Validation
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Executes a move if valid and updates the game state.
 move(game_state(Grid1, Grid2, Player1, Player2, RowMapping, ColMapping), move(Row, Col), game_state(NewGrid1, NewGrid2, Player2, Player1, RowMapping, ColMapping)) :-
@@ -188,9 +183,9 @@ translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, Translate
     nth1(Row, RowMapping, TranslatedRow),
     nth1(Col, ColMapping, TranslatedCol).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Logic
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Merge the two grids into a larger one
 combine_grids(Grid1, Grid2, CombinedGrid) :-
@@ -258,9 +253,9 @@ choose_move(GameState, Level, Move) :-
     (Level = 1 -> random_move(GameState, Move);
      Level = 2 -> greedy_move(GameState, Move)).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Loop
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Runs the game loop, alternating turns between players
 game_loop(GameState) :-
