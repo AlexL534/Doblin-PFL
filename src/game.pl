@@ -81,29 +81,79 @@ generate_mappings(Size, RowMapping, ColMapping) :-
 % Game Display
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Display the current game state (both grids side by side)
+% Display the current game state (two grids with randomized row numbers on the right for Player 2)
 display_game(game_state(Grid1, Grid2, CurrentPlayer, _, _, _)) :-
-    write('Grid 1 and Grid 2: '), nl,
-    print_side_by_side(Grid1, Grid2),
+    length(Grid1, Size),  % Get the grid size (assumes square grid)
+    write('Grid: '), nl,
+    write('   Player 1             Player 2'), nl,  % Label for Player 1 and Player 2
+    generate_column_labels(Size, Player1Labels), % Generate column labels for Player 1
+    randomized_column_labels(Size, Player2Labels),  % Generate randomized column labels for Player 2
+    print_column_labels(Player1Labels, Player2Labels),  % Print column labels for both grids
+    randomized_row_numbers(Size, RandomizedRowNumbers),  % Get randomized row numbers for Player 2 grid
+    print_side_by_side(Grid1, Grid2, 1, RandomizedRowNumbers), % Print both grids side by side
+    nl, % Blank line between grids
     format('Current Player: ~w~n', [CurrentPlayer]).
 
-% Prints both grids side by side, row by row
-print_side_by_side([], []).
-print_side_by_side([Row1|Rest1], [Row2|Rest2]) :-
-    print_row(Row1, Row2),
-    print_side_by_side(Rest1, Rest2).
-
-% Prints a single row from both grids side by side
-print_row(Row1, Row2) :-
-    maplist(print_cell, Row1),
-    write('   '), % Space between the grids
-    maplist(print_cell, Row2),
+% Print column labels for both grids
+print_column_labels(Player1Labels, Player2Labels) :-
+    write('    '), % Space before column labels for Player 1
+    maplist(write_label, Player1Labels),  % Write Player 1 labels
+    write('    '), % Space between the grids
+    maplist(write_label, Player2Labels),  % Write Player 2 labels
     nl.
 
-% Prints each cell (empty or filled)
-print_cell(Cell) :-
-    write(Cell), % Print the cell content, like '_', 'X', 'O'
-    write(' ').
+write_label(Label) :- write(Label), write(' ').
+
+% Generate column labels (e.g., ['A', 'B', 'C', ...] up to grid size)
+generate_column_labels(Size, Labels) :-
+    numlist(1, Size, Numbers),
+    maplist(generate_column_label, Numbers, Labels).
+
+% Generate column label for a given index (supports up to 'ZZ')
+generate_column_label(Index, Label) :-
+    Base is 26,
+    Quotient is (Index - 1) // Base,
+    Remainder is (Index - 1) mod Base,
+    char_code('A', A),
+    (   Quotient =:= 0
+    ->  Code is A + Remainder, % Evaluate A + Remainder
+        char_code(Label, Code)
+    ;   FirstCode is A + Quotient - 1, % Evaluate A + Quotient - 1
+        SecondCode is A + Remainder,   % Evaluate A + Remainder
+        char_code(First, FirstCode),
+        char_code(Second, SecondCode),
+        atom_codes(Label, [First, Second])
+    ).
+
+
+% Generate randomized column labels
+randomized_column_labels(Size, RandomizedLabels) :-
+    generate_column_labels(Size, Labels),
+    random_permutation(Labels, RandomizedLabels).
+
+% Generate randomized row numbers for Player 2 grid
+randomized_row_numbers(Size, RandomizedRowNumbers) :-
+    numlist(1, Size, RowNumbers),  % Create list from 1 to grid size
+    random_permutation(RowNumbers, RandomizedRowNumbers).
+
+% Print both grids side by side with randomized row numbers for Player 2
+print_side_by_side([], [], _, _).
+print_side_by_side([Row1|Rest1], [Row2|Rest2], RowNumber, [RandomizedRowNum|RestRandomized]) :-
+    print_row(Row1),
+    write('    '), % Space between grids
+    print_row(Row2),
+    write('   '), % Space for row numbers
+    format('~d', [RandomizedRowNum]), % Print the randomized row number for Player 2
+    nl,
+    NextRowNumber is RowNumber + 1,
+    print_side_by_side(Rest1, Rest2, NextRowNumber, RestRandomized).
+
+% Prints a single row
+print_row([]).
+print_row([Cell|Rest]) :-
+    write(Cell), write(' '),
+    print_row(Rest).
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Move Execution and Validation
