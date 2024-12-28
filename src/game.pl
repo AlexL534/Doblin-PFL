@@ -97,13 +97,17 @@ display_game(game_state(Grid1, Grid2, CurrentPlayer, _, _, _)) :-
 
 % Print column labels for both grids
 print_column_labels(Player1Labels, Player2Labels) :-
-    write('    '), % Space before column labels for Player 1
-    maplist(write_label, Player1Labels),  % Write Player 1 labels
+    write('  '), % Space before column labels for Player 1
+    print_aligned_labels(Player1Labels),  % Write Player 1 labels with spacing
     write('    '), % Space between the grids
-    maplist(write_label, Player2Labels),  % Write Player 2 labels
+    print_aligned_labels(Player2Labels),  % Write Player 2 labels with spacing
     nl.
 
-write_label(Label) :- write(Label), write(' ').
+% Print aligned column labels with two spaces between each label
+print_aligned_labels([]).
+print_aligned_labels([Label|Rest]) :-
+    format('~w  ', [Label]),  % Two spaces after each label
+    print_aligned_labels(Rest).
 
 % Generate column labels (e.g., ['A', 'B', 'C', ...] up to grid size)
 generate_column_labels(Size, Labels) :-
@@ -117,15 +121,14 @@ generate_column_label(Index, Label) :-
     Remainder is (Index - 1) mod Base,
     char_code('A', A),
     (   Quotient =:= 0
-    ->  Code is A + Remainder, % Evaluate A + Remainder
+    ->  Code is A + Remainder,
         char_code(Label, Code)
-    ;   FirstCode is A + Quotient - 1, % Evaluate A + Quotient - 1
-        SecondCode is A + Remainder,   % Evaluate A + Remainder
+    ;   FirstCode is A + Quotient - 1,
+        SecondCode is A + Remainder,
         char_code(First, FirstCode),
         char_code(Second, SecondCode),
         atom_codes(Label, [First, Second])
     ).
-
 
 % Generate randomized column labels
 randomized_column_labels(Size, RandomizedLabels) :-
@@ -138,22 +141,24 @@ randomized_row_numbers(Size, RandomizedRowNumbers) :-
     random_permutation(RowNumbers, RandomizedRowNumbers).
 
 % Print both grids side by side with randomized row numbers for Player 2
-print_side_by_side([], [], _, _).
+print_side_by_side([], [], [], []).
 print_side_by_side([Row1|Rest1], [Row2|Rest2], [Player1RowNum|RestPlayer1Rows], [Player2RowNum|RestPlayer2Rows]) :-
-    format('~d ', [Player1RowNum]), % Print randomized row number for Player 1
-    print_row(Row1),
-    write('    '), % Space between grids
-    print_row(Row2),
-    format('~d', [Player2RowNum]), % Print the randomized row number for Player 2
+    % Ensure row numbers are treated as integers
+    RowNum1 is round(Player1RowNum),
+    RowNum2 is round(Player2RowNum),
+    format('~d ', [RowNum1]),  % Print Player 1's row number
+    print_row(Row1),  % Print Player 1's row
+    write('    '),  % Space between grids
+    print_row(Row2),  % Print Player 2's row
+    format('~d', [RowNum2]),  % Print Player 2's row number
     nl,
     print_side_by_side(Rest1, Rest2, RestPlayer1Rows, RestPlayer2Rows).
 
 % Prints a single row
 print_row([]).
 print_row([Cell|Rest]) :-
-    write(Cell), write(' '),
+    format('~w ', [Cell]),  % Two spaces after each cell
     print_row(Rest).
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Move Execution and Validation
