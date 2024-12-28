@@ -2,6 +2,7 @@
 
 :- use_module(library(lists)).
 :- use_module(library(random)).
+:- use_module(library(between)).
 
 % Gives access to the game menu
 play :-
@@ -193,8 +194,8 @@ print_row([Cell|Rest]) :-
 %checks if a position in within bounds and does not already have a piece
 validate_move(Grid1, move(Row, Col)) :-
     length(Grid1,Max),
-    Row >=0, Row =< Max,
-    Col >=0, Col =< Max,
+    Row >=1, Row =< Max,
+    Col >=1, Col =< Max,
     nth1(Row,Grid1,TargetRow),
     nth1(Col,TargetRow,Symbol),
     Symbol == '_'.
@@ -277,10 +278,11 @@ draw_condition(Grid1, Grid2) :-
 valid_moves(game_state(Grid1, _, _, _, _, _), ListOfMoves) :-
     findall(move(Row, Col), validate_move(Grid1, move(Row, Col)), ListOfMoves).
 
+
 % Checks if the game is over and determines the winner
 game_over(game_state(Grid1, Grid2, _, _, _, _), Winner) :-
-    (winning_condition(Grid1) -> Winner = player1;
-     winning_condition(Grid2) -> Winner = player2;
+    (winning_condition(Grid1,Grid2) -> Winner = player1;
+     winning_condition(Grid1,Grid2) -> Winner = player2;
      draw_condition(Grid1, Grid2) -> Winner = draw;
      fail).
 
