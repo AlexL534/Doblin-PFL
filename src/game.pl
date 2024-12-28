@@ -86,11 +86,13 @@ generate_mappings(Size, RowMapping, ColMapping) :-
 % Game Display
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Display the current game state (two grids with randomized row numbers on the right for Player 2)
+% Display the current game state
 display_game(game_state(Grid1, Grid2, Name1, Name2, CurrentPlayer, _)) :-
     length(Grid1, Size),  % Get the grid size (assumes square grid)
     write('Grids:'), nl,
-    format('   ~w             ~w~n', [Name1, Name2]),  % Use the players names
+    Width is Size * 3 - 2,
+    print_centered_with_offset(Name1, Width, 2),
+    print_centered_with_offset(Name2, Width, Width + 8), nl,  
     generate_column_labels(Size, Player1Labels),  % Generate column labels for Player 1
     generate_column_labels(Size, Player2Labels),  % Generate column labels for Player 2
     print_column_labels(Player1Labels, Player2Labels),  % Print column labels for both grids
@@ -102,6 +104,15 @@ display_game(game_state(Grid1, Grid2, Name1, Name2, CurrentPlayer, _)) :-
     ->  format('Current Player: ~w~n', [Name1])  % Player 1's turn
     ;   format('Current Player: ~w~n', [Name2])  % Player 2's turn
     ).
+
+% Helper to print a name centered within a specific width with a dynamic offset
+print_centered_with_offset(Name, Width, Offset) :-
+    atom(Name),  % Ensure Name is an atom
+    atom_length(Name, NameLength),  % Get the length of the name
+    Padding is Width - NameLength,  % Total padding needed with the dynamic offset
+    LeftPadding is Padding // 2,    % Half padding for the left
+    RightPadding is Padding - LeftPadding,  % Remaining padding for the right
+    format('~*|~s~*|', [LeftPadding + Offset, Name, RightPadding]).
 
 % Print column labels for both grids
 print_column_labels(Player1Labels, Player2Labels) :-
