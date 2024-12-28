@@ -109,6 +109,12 @@ print_cell(Cell) :-
 % Move Execution and Validation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%validates a move
+validate_move(Grid1, move(Row, Col)) :-
+    length(Grid1,Max),
+    Row >=0, Row =< Max,
+    Col >=0, Col =< Max.
+    
 % Executes a move if valid and updates the game state.
 move(game_state(Grid1, Grid2, Player1, Player2, RowMapping, ColMapping), move(Row, Col), game_state(NewGrid1, NewGrid2, Player2, Player1, RowMapping, ColMapping)) :-
     validate_move(Grid1, move(Row, Col)),
