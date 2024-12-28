@@ -30,18 +30,38 @@ main_menu :-
         main_menu  % Retry if size is invalid
     ).
 
-% Configures the game based on the menu selection.
-configure_game(1, Size, config(Name1, Name2, _, _, Size)) :-
-    write('Human vs Human selected.'), nl,
-    write('Enter name for Player 1: '), read(Name1),
-    write('Enter name for Player 2: '), read(Name2),
-    Config = config(Name1, Name2, _, _, Size),
-    write('Config: '), write(Config), nl.
+% Helper predicate to ensure the name length does not exceed 16 characters.
+valid_name(Name) :-
+    atom_length(Name, Length),
+    Length =< 16. 
 
-configure_game(2, Size, config(Name1, 'CPU', Level, _, Size)) :-
+% Configures the game based on the menu selection.
+configure_game(1, Size, config(Name1, Name2, _, _, Size)) :- 
+    write('Human vs Human selected.'), nl,
+    write('Enter name for Player 1: '), 
+    read(Name1),
+    (   valid_name(Name1)
+    ->  true  % If name is valid, proceed
+    ;   write('Name cannot be longer than 16 characters. Please try again.'), nl,
+        configure_game(1, Size, config(Name1, Name2, _, _, Size))  % Re-enter the name
+    ),
+    write('Enter name for Player 2: '), 
+    read(Name2),
+    (   valid_name(Name2)
+    ->  true  % If name is valid, proceed
+    ;   write('Name cannot be longer than 16 characters. Please try again.'), nl,
+        configure_game(1, Size, config(Name1, Name2, _, _, Size))  % Re-enter the name
+    ).
+
+configure_game(2, Size, config(Name1, 'CPU', Level, _, Size)) :- 
     write('Human vs Computer selected.'), nl,
     write('Enter your name: '),
     read(Name1),
+    (   valid_name(Name1)
+    ->  true  % If name is valid, proceed
+    ;   write('Name cannot be longer than 16 characters. Please try again.'), nl,
+        configure_game(2, Size, config(Name1, 'CPU', Level, _, Size))  % Re-enter the name
+    ),
     write('Choose computer difficulty (1: Easy, 2: Hard): '),
     read(Level).
 
@@ -56,9 +76,7 @@ configure_game(3, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
 
 % Initializes the game state based on the configuration
 initial_state(config(Name1, Name2, _, _, Size), game_state(Grid1, Grid2, Name1, Name2, RowMapping, ColMapping)) :-
-    initialize_grids(Size, Grid1, Grid2, RowMapping, ColMapping),
-    format('Initialized State: Player1=~w, Player2=~w~n', [Name1, Name2]).
-
+    initialize_grids(Size, Grid1, Grid2, RowMapping, ColMapping).
 
 % Initializes two grids and their coordinate mappings.
 initialize_grids(Size, Grid1, Grid2, RowMapping, ColMapping) :-
@@ -91,8 +109,8 @@ display_game(game_state(Grid1, Grid2, Name1, Name2, CurrentPlayer, _)) :-
     length(Grid1, Size),  % Get the grid size (assumes square grid)
     write('Grids:'), nl,
     Width is Size * 3 - 2,
-    print_centered_with_offset(Name1, Width, 2),
-    print_centered_with_offset(Name2, Width, Width + 8), nl,  
+    print_centered_with_offset(Name1, Width, 1),
+    print_centered_with_offset(Name2, Width, Width + 7), nl,  
     generate_column_labels(Size, Player1Labels),  % Generate column labels for Player 1
     generate_column_labels(Size, Player2Labels),  % Generate column labels for Player 2
     print_column_labels(Player1Labels, Player2Labels),  % Print column labels for both grids
@@ -118,7 +136,7 @@ print_centered_with_offset(Name, Width, Offset) :-
 print_column_labels(Player1Labels, Player2Labels) :-
     write('  '), % Space before column labels for Player 1
     print_aligned_labels(Player1Labels),  % Write Player 1 labels with spacing
-    write('    '), % Space between the grids
+    write('   '), % Space between the grids
     print_aligned_labels(Player2Labels),  % Write Player 2 labels with spacing
     nl.
 
@@ -153,17 +171,19 @@ generate_column_label(Index, Label) :-
 print_side_by_side([], [], [], []).
 print_side_by_side([Row1|Rest1], [Row2|Rest2], [Player1RowNum|RestPlayer1Rows], [Player2RowNum|RestPlayer2Rows]) :-
     format('~d ', [Player1RowNum]),  % Print Player 1 row number
-    print_row(Row1),  % Print Player 1's row
+    print_row(Row1),  % Print Player 1 row
     write('    '),  % Space between grids
-    print_row(Row2),  % Print Player 2's row
-    format(' ~d', [Player2RowNum]),  % Print Player 2 row number
+    print_row(Row2),  % Print Player 2 row
+    format('~d', [Player2RowNum]),  % Print Player 2 row number
     nl,
     print_side_by_side(Rest1, Rest2, RestPlayer1Rows, RestPlayer2Rows).
 
 % Prints a single row
 print_row([]).
+print_row([Cell]) :-
+    format('~w', [Cell]). 
 print_row([Cell|Rest]) :-
-    format('~w ', [Cell]),  % Two spaces after each cell
+    format('~w ', [Cell]),  
     print_row(Rest).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
