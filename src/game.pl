@@ -275,6 +275,11 @@ draw_condition(Grid1, Grid2) :-
     calculate_points(Grid1, Grid2, player2, Points2),
     Points1 = Points2.
 
+winning_condition(Grid1,Grid2) :-
+    calculate_points(Grid1, Grid2, player1, Points1),
+    calculate_points(Grid1, Grid2, player2, Points2),
+    Points1 < Points2.
+
 all_moves(Grid,Moves) :-
     length(Grid,Max),
     findall(move(Row,Col), (between(1,Max,Row),between(1,Max,Col)),Moves).
