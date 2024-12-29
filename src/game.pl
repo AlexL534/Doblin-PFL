@@ -351,7 +351,6 @@ all_moves(Grid,Moves) :-
 % Returns all valid moves for the current game state.
 valid_moves(Grid1, ListOfMoves) :-
     all_moves(Grid1,Moves),
-    write(Grid1),nl,
     findall(move(Row, Col), (member(move(Row,Col),Moves),validate_move(Grid1, move(Row, Col))), ListOfMoves).
 
 
