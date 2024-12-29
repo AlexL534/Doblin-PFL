@@ -304,10 +304,14 @@ game_over(game_state(Grid1, Grid2, _, _, _, _), Winner) :-
 value(game_state(Grid1, _, _, _, _, _), Player, Value) :-
     evaluate_board(Grid1, Player, Value).
 
+
+random_move(Grid,Move) :-
+        valid_moves(Grid,ListOfMoves),
+        random_member(Move,ListOfMoves).
 % Chooses a move for the computer player based on difficulty level (level 1 should return a random valid move and level 2 the best play with a greedy algorithm)
-choose_move(GameState, Level, Move) :-
-    (Level = 1 -> random_move(GameState, Move);
-     Level = 2 -> greedy_move(GameState, Move)).
+choose_move(Grid, Level, Move) :-
+    (Level = 1 -> random_move(Grid, Move);
+     Level = 2 -> greedy_move(Grid, Move)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Loop
