@@ -217,7 +217,7 @@ print_row([Cell|Rest]) :-
 % Move Execution and Validation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%checks if a position in within bounds and does not already have a piece
+% checks if a position in within bounds and does not already have a piece
 validate_move(Grid1, move(Row, Col)) :-
     length(Grid1,Max),
     Row >=1, Row =< Max,
@@ -290,7 +290,9 @@ diagonals(Grid, Diagonals) :-
 
 % Extracts a single diagonal from the grid
 extract_diagonal(Grid, Size, Diagonal) :-
-    between(-Size, Size, Offset),
+    MaxOffset is Size - 1,
+    MinOffset is -(MaxOffset),
+    between(MinOffset, MaxOffset, Offset), 
     findall(Cell, (
         between(1, Size, Row),
         Col is Row + Offset,
@@ -306,8 +308,9 @@ within_bounds(Value, Max) :-
 % Finds all 2x2 squares of the same symbol
 squares_of_four(Grid, Symbol) :-
     length(Grid, Size),
-    between(1, Size-1, Row),
-    between(1, Size-1, Col),
+    Max is Size - 1,
+    between(1, Max, Row),
+    between(1, Max, Col),
     nth1(Row, Grid, Row1),
     nth1(Col, Row1, Symbol),
     NextRow is Row + 1,
@@ -332,13 +335,13 @@ count_consecutive([Other|_], Player, 0) :-
 
 % Game over condition: Check if the game is a draw
 draw_condition(Grid1, Grid2) :-
-    calculate_points(Grid1, Grid2, player1, Points1),
-    calculate_points(Grid1, Grid2, player2, Points2),
+    calculate_points(Grid1, player1, Points1),
+    calculate_points(Grid2, player2, Points2),
     Points1 = Points2.
 
 winning_condition(Grid1,Grid2) :-
-    calculate_points(Grid1, Grid2, player1, Points1),
-    calculate_points(Grid1, Grid2, player2, Points2),
+    calculate_points(Grid1, player1, Points1),
+    calculate_points(Grid2, player2, Points2),
     Points1 < Points2.
 
 all_moves(Grid,Moves) :-
@@ -357,9 +360,12 @@ game_over(game_state(Grid1, Grid2, _, _, _, _), Winner) :-
     length(Moves1,Lmoves1),
     length(Moves2,Lmoves2),
     Lmoves1 == 0, Lmoves2 == 0,
-    (winning_condition(Grid1,Grid2) -> Winner = player1;
-     winning_condition(Grid1,Grid2) -> Winner = player2;
-     draw_condition(Grid1, Grid2) -> Winner = draw), !, fail.
+    (   winning_condition(Grid1, Grid2) -> 
+        calculate_points(Grid1, player1, Points1),
+        calculate_points(Grid2, player2, Points2),
+        (Points1 > Points2 -> Winner = player1; Winner = player2);
+        draw_condition(Grid1, Grid2) -> Winner = draw
+    ).
 
 % Evaluates the current game state and returns how bad or good it is for the current player
 value(game_state(Grid1, _, _, _, _, _), Player, Value) :-
@@ -409,5 +415,5 @@ current_player_turn(GameState, quit) :-
     (Move = quit -> true; fail).
 
 % Placeholder predicates for required logic (to be implemented):
-% validate_move/2, winning_condition/1, evaluate_board/3
+% evaluate_board/3
 % random_move/2, greedy_move/2
