@@ -257,9 +257,9 @@ translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, Translate
 % Counts the points for a player in their respective grid
 calculate_points(Grid, Player, Points) :-
     (Player = player1 -> Symbol = 'X'; Symbol = 'O'),
-    findall(_, horizontal_lines(Grid, Symbol, 4), Horizontal),
-    findall(_, vertical_lines(Grid, Symbol, 4), Vertical),
-    findall(_, diagonal_lines(Grid, Symbol, 4), Diagonals),
+    findall(_, horizontal_lines(Grid, Symbol), Horizontal),
+    findall(_, vertical_lines(Grid, Symbol), Vertical),
+    findall(_, diagonal_lines(Grid, Symbol), Diagonals),
     findall(_, squares_of_four(Grid, Symbol), Squares),
     length(Horizontal, HorizontalCount),
     length(Vertical, VerticalCount),
@@ -267,18 +267,18 @@ calculate_points(Grid, Player, Points) :-
     length(Squares, SquareCount),
     Points is HorizontalCount + VerticalCount + DiagonalCount + SquareCount.
 
-% Finds all horizontal lines of a given length
-horizontal_lines(Grid, Symbol, Length) :-
+% Finds all horizontal lines of length 4
+horizontal_lines(Grid, Symbol) :-
     member(Row, Grid),
     sublist([Symbol, Symbol, Symbol, Symbol], Row).
 
-% Finds all vertical lines of a given length
-vertical_lines(Grid, Symbol, Length) :-
+% Finds all vertical lines of length 4
+vertical_lines(Grid, Symbol) :-
     transpose(Grid, TransposedGrid),
     horizontal_lines(TransposedGrid, Symbol, Length).
 
-% Finds all diagonal lines (\ and /) of a given length
-diagonal_lines(Grid, Symbol, Length) :-
+% Finds all diagonal lines (\ and /) of length 4
+diagonal_lines(Grid, Symbol) :-
     diagonals(Grid, Diagonals),
     member(Diagonal, Diagonals),
     sublist([Symbol, Symbol, Symbol, Symbol], Diagonal).
