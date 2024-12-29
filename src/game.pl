@@ -286,10 +286,14 @@ valid_moves(Grid1, ListOfMoves) :-
 
 % Checks if the game is over and determines the winner
 game_over(game_state(Grid1, Grid2, _, _, _, _), Winner) :-
+    valid_moves(Grid1,Moves1),
+    valid_moves(Grid2,Moves2),
+    length(Moves1,Lmoves1),
+    length(Moves2,Lmoves2),
+    Lmoves1 == 0, Lmoves2 == 0,
     (winning_condition(Grid1,Grid2) -> Winner = player1;
      winning_condition(Grid1,Grid2) -> Winner = player2;
-     draw_condition(Grid1, Grid2) -> Winner = draw;
-     fail).
+     draw_condition(Grid1, Grid2) -> Winner = draw), !, fail.
 
 % Evaluates the current game state and returns how bad or good it is for the current player
 value(game_state(Grid1, _, _, _, _, _), Player, Value) :-
