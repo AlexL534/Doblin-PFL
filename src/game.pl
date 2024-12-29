@@ -228,12 +228,13 @@ validate_move(Grid1, move(Row, Col)) :-
     Symbol == '_ '.
     
 % Executes a move if valid and updates the game state.
-move(game_state(Grid1, Grid2, Player1, Player2, RowMapping, ColMapping), move(Row, Col),Symbol ,game_state(NewGrid1, NewGrid2, Player2, Player1, RowMapping, ColMapping)) :-
-    validate_move(Grid1, move(Row, Col)),
-    place_symbol(Symbol,Grid1, Grid2, Row, Col, Player1, RowMapping, ColMapping, NewGrid1, NewGrid2).
+move(game_state(Grid1, Grid2,CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, Col),Symbol ,game_state(NewGrid1, NewGrid2, NextPlayer, Player1,Player2, RowMapping, ColMapping)) :-
+    write('move: '),write(CurrentPlayer),nl,
+    place_symbol(Symbol,Grid1, Grid2, Row, Col,  RowMapping, ColMapping, NewGrid1, NewGrid2),
+    (CurrentPlayer == Player1 -> NextPlayer = Player2; NextPlayer = Player1).
 
 % Places a symbol on both grids according to the mappings.
-place_symbol(Symbol,Grid1, Grid2, Row, Col, Symbol, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
+place_symbol(Symbol,Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
     translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
     update_grid(Grid1, Row, Col, Symbol, NewGrid1),
     update_grid(Grid2, TranslatedRow, TranslatedCol, Symbol, NewGrid2).
@@ -410,19 +411,19 @@ announce_winner(Winner) :-
 % Handles current player turn
 current_player_turn(GameState, NewGameState) :-
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping),
-    (CurrentPlayer = Player1 ->
+    (CurrentPlayer \== 'CPU' ->
         handle_player_turn(Grid1, Grid2, CurrentPlayer, RowMapping, ColMapping, NewGameState);
         handle_computer_turn(Grid1, Grid2, Player2, RowMapping, ColMapping, NewGameState)).
 
 % Handles a human player turn
-handle_player_turn(Grid1, Grid2, Player, RowMapping, ColMapping, NewGameState) :-
+handle_player_turn(Grid1, Grid2, Player, Player1, Player2, RowMapping, ColMapping, NewGameState) :-
     format('~w, it\'s your turn! Enter your move (Row, Col) or type "quit" to exit: ', [Player]),
     catch(read(Input), _, fail),
     (Input = quit ->
         NewGameState = quit;
-        Input = move(Row, Col),
+        Input = move(Row, Col), write(Row),nl,write(Col),nl,
         (validate_move(Grid1, move(Row, Col)) ->
-            move(game_state(Grid1, Grid2, Player, _, _), move(Row, Col),'X ' ,NewGameState);
+            move(game_state(Grid1, Grid2, Player,Player1, Player2, RowMapping,ColMapping), move(Row, Col),'X ' ,NewGameState);
             write('Invalid move! Try again.'), nl,
             handle_player_turn(Grid1, Grid2, Player, RowMapping, ColMapping, NewGameState))).
 
