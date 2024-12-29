@@ -97,7 +97,8 @@ get_ai_level(Level, Label) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Initializes the game state based on the configuration
-initial_state(config(Name1, Name2, _, _, Size), game_state(Grid1, Grid2, Name1, Name2, RowMapping, ColMapping)) :-
+initial_state(config(Name1, Name2, _, _, Size), game_state(Grid1, Grid2,CurrentPlayer ,Name1, Name2, RowMapping, ColMapping)) :-
+    CurrentPlayer = Name1,
     initialize_grids(Size, Grid1, Grid2, RowMapping, ColMapping).
 
 % Initializes two grids and their coordinate mappings
@@ -127,7 +128,7 @@ generate_mappings(Size, RowMapping, ColMapping) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Display the current game state
-display_game(game_state(Grid1, Grid2, Name1, Name2, CurrentPlayer, _)) :-
+display_game(game_state(Grid1, Grid2,CurrentPlayer, Name1, Name2, _,_)) :-
     length(Grid1, Size),
     write('Grids:'), nl,
     Width is Size * 3 - 2,
@@ -227,12 +228,12 @@ validate_move(Grid1, move(Row, Col)) :-
     Symbol == '_ '.
     
 % Executes a move if valid and updates the game state.
-move(game_state(Grid1, Grid2, Player1, Player2, RowMapping, ColMapping), move(Row, Col), game_state(NewGrid1, NewGrid2, Player2, Player1, RowMapping, ColMapping)) :-
+move(game_state(Grid1, Grid2, Player1, Player2, RowMapping, ColMapping), move(Row, Col),Symbol ,game_state(NewGrid1, NewGrid2, Player2, Player1, RowMapping, ColMapping)) :-
     validate_move(Grid1, move(Row, Col)),
-    place_symbol(Grid1, Grid2, Row, Col, Player1, RowMapping, ColMapping, NewGrid1, NewGrid2).
+    place_symbol(Symbol,Grid1, Grid2, Row, Col, Player1, RowMapping, ColMapping, NewGrid1, NewGrid2).
 
 % Places a symbol on both grids according to the mappings.
-place_symbol(Grid1, Grid2, Row, Col, Symbol, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
+place_symbol(Symbol,Grid1, Grid2, Row, Col, Symbol, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
     translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
     update_grid(Grid1, Row, Col, Symbol, NewGrid1),
     update_grid(Grid2, TranslatedRow, TranslatedCol, Symbol, NewGrid2).
@@ -388,7 +389,6 @@ choose_move(Grid, Level, Move) :-
 % Runs the game loop, alternating turns between players
 game_loop(GameState) :-
     display_game(GameState),
-    print_valid_moves(GameState),
     (game_over(GameState, Winner) ->
         announce_winner(Winner);
         current_player_turn(GameState, NewGameState),
@@ -422,7 +422,7 @@ handle_player_turn(Grid1, Grid2, Player, RowMapping, ColMapping, NewGameState) :
         NewGameState = quit;
         Input = move(Row, Col),
         (validate_move(Grid1, move(Row, Col)) ->
-            move(game_state(Grid1, Grid2, Player, _, _), move(Row, Col), NewGameState);
+            move(game_state(Grid1, Grid2, Player, _, _), move(Row, Col),'X ' ,NewGameState);
             write('Invalid move! Try again.'), nl,
             handle_player_turn(Grid1, Grid2, Player, RowMapping, ColMapping, NewGameState))).
 
@@ -430,7 +430,7 @@ handle_player_turn(Grid1, Grid2, Player, RowMapping, ColMapping, NewGameState) :
 handle_computer_turn(Grid1, Grid2, Computer, RowMapping, ColMapping, NewGameState) :-
     write('Computer is thinking...'), nl,
     choose_move(Grid1, 1, Move), % Replace 1 with AI level if needed
-    move(game_state(Grid1, Grid2, Computer, _, _), Move, NewGameState),
+    move(game_state(Grid1, Grid2, Computer, _, _), Move,'X_' ,NewGameState),
     format('Computer chose move: ~w~n', [Move]).
 
 % Placeholder predicates for required logic (to be implemented):
