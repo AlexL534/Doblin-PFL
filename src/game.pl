@@ -5,15 +5,15 @@
 :- use_module(library(random_between)).
 :- use_module(library(between)).
 
-% Gives access to the game menu
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Game Menu 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Starts the game by displaying the main menu
 play :-
     main_menu.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Game Menu and Configuration
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Displays the game menu and allows the players to configure game type, board size, and AI difficulty levels
+% Displays the game menu and handles user choices
 main_menu :-
     write('Welcome to Doblin!'), nl,
     get_grid_size(Size),
@@ -22,7 +22,7 @@ main_menu :-
     write('3. Computer vs Computer'), nl,
     write('4. Quit'), nl,
     write('Choose an option: '), nl,
-    catch(read(Choice), _, fail),  % Catch invalid input
+    catch(read(Choice), _, fail),
     (   integer(Choice), member(Choice, [1, 2, 3, 4])
     ->  (   Choice = 4
         ->  write('Goodbye!'), nl;   
@@ -35,22 +35,26 @@ main_menu :-
     ).
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Game Configuration
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % Asks for and validates grid size
 get_grid_size(Size) :-
     write('Choose grid size (between 6 and 9): '),
-    catch(read(Input), _, fail),  % Catch any invalid input
+    catch(read(Input), _, fail),
     (   integer(Input), Input >= 6, Input =< 9
     ->  Size = Input
     ;   write('Invalid grid size! Please choose a size between 6 and 9.'), nl,
         get_grid_size(Size)
     ).
 
-% Helper predicate to ensure the name length does not exceed 16 characters.
+% Ensures name does not exceed 16 characters
 valid_name(Name) :-
     atom_length(Name, Length),
     Length =< 16. 
 
-% Configures the game based on menu selection.
+% Configures the game based on selected mode
 configure_game(1, Size, config(Name1, Name2, _, _, Size)) :- 
     write('Human vs Human selected.'), nl,
     get_player_name('Player 1', Name1),
@@ -69,7 +73,7 @@ configure_game(3, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
 % Prompts for player name
 get_player_name(PlayerLabel, Name) :-
     format('Enter name for ~w: ', [PlayerLabel]),
-    catch(read(Input), _, fail),  % Catch invalid input
+    catch(read(Input), _, fail),
     (   atom(Input), valid_name(Input)
     ->  Name = Input
     ;   write('Invalid name! Please ensure it is an atom and does not exceed 16 characters.'), nl,
@@ -77,28 +81,26 @@ get_player_name(PlayerLabel, Name) :-
     ).
 
 % Prompts for AI difficulty
-get_ai_level(Level) :-
-    write('Choose computer difficulty (1: Easy, 2: Hard): '),
-    catch(read(Input), _, fail),  % Catch invalid input
+get_ai_level(Level, Label) :-
+    ( var(Label) -> format('Choose computer difficulty (1: Easy, 2: Hard): ', []);
+      format('Choose difficulty for ~w (1: Easy, 2: Hard): ', [Label])
+    ),
+    catch(read(Input), _, fail),
     (   integer(Input), member(Input, [1, 2])
     ->  Level = Input
     ;   write('Invalid difficulty! Please choose 1 or 2.'), nl,
-        get_ai_level(Level)
+        get_ai_level(Level, Label)
     ).
 
-get_ai_level(Level, Label) :-
-    format('Choose difficulty for ~w (1: Easy, 2: Hard): ', [Label]),
-    get_ai_level(Level).
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Game Initialization and State
+% Game State Initialization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Initializes the game state based on the configuration
 initial_state(config(Name1, Name2, _, _, Size), game_state(Grid1, Grid2, Name1, Name2, RowMapping, ColMapping)) :-
     initialize_grids(Size, Grid1, Grid2, RowMapping, ColMapping).
 
-% Initializes two grids and their coordinate mappings.
+% Initializes two grids and their coordinate mappings
 initialize_grids(Size, Grid1, Grid2, RowMapping, ColMapping) :-
     create_empty_grid(Size, Grid1),
     create_empty_grid(Size, Grid2),
@@ -114,7 +116,7 @@ create_empty_grid(Size, Grid) :-
 length_(Size, List) :-
     length(List, Size).
 
-% Generates row and column mappings for the second grid.
+% Generates row and column mappings for the second grid
 generate_mappings(Size, RowMapping, ColMapping) :-
     numlist(1, Size, Base),
     random_permutation(Base, RowMapping),
@@ -351,17 +353,23 @@ game_loop(GameState) :-
         format('Game Over! Winner: ~w~n', [Winner]);
         current_player_turn(GameState, NewGameState),
         (NewGameState = quit ->
-            write('Game exited by the player. Goodbye!'), nl
-        ;
+            write('Game exited by the player. Goodbye!'), nl;
         game_loop(NewGameState))
     ).
 
-% Handles the current player turn
-current_player_turn(game_state(Board, CurrentPlayer, Captured), NewGameState) :-
-    (CurrentPlayer = human ->
-        read_move(Move);
-        choose_move(game_state(Board, CurrentPlayer, Captured), 2, Move)),
-    move(game_state(Board, CurrentPlayer, Captured), Move, NewGameState).
+% Handles the current player turn and alternates turns
+current_player_turn(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2)) :-
+    % Check whose turn it is (current player is CurrentPlayer)
+    (CurrentPlayer = Player1 -> 
+        (choose_move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2), 2, Move),
+         move(game_state(Grid1, Grid2, Player1, Player2), Move, game_state(NewGrid1, NewGrid2, Player2, Player1, Player2))
+        );
+        (choose_move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2), 1, Move),
+         move(game_state(Grid1, Grid2, Player1, Player2), Move, game_state(NewGrid1, NewGrid2, Player1, Player2))
+        )
+    ),
+    % Switch to the next player
+    (CurrentPlayer = Player1 -> NextPlayer = Player2; NextPlayer = Player1).
 
 current_player_turn(GameState, quit) :-
     write('Enter your move (or type "quit" to exit): '), nl,
