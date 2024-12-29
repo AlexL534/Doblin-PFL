@@ -20,13 +20,17 @@ main_menu :-
     write('1. Human vs Human'), nl,
     write('2. Human vs Computer'), nl,
     write('3. Computer vs Computer'), nl,
+    write('4. Quit'), nl,
     write('Choose an option: '), nl,
     catch(read(Choice), _, fail),  % Catch invalid input
-    (   integer(Choice), member(Choice, [1, 2, 3])
-    ->  configure_game(Choice, Size, GameConfig),
-        initial_state(GameConfig, GameState),
-        game_loop(GameState)
-    ;   write('Invalid option! Please try again.'), nl,
+    (   integer(Choice), member(Choice, [1, 2, 3, 4])
+    ->  (   Choice = 4
+        ->  write('Goodbye!'), nl;   
+            configure_game(Choice, Size, GameConfig),
+            initial_state(GameConfig, InitialState),
+            game_loop(InitialState)
+        );   
+        write('Invalid option! Please try again.'), nl,
         main_menu
     ).
 
@@ -346,7 +350,11 @@ game_loop(GameState) :-
     (game_over(GameState, Winner) ->
         format('Game Over! Winner: ~w~n', [Winner]);
         current_player_turn(GameState, NewGameState),
-        game_loop(NewGameState)).
+        (NewGameState = quit ->
+            write('Game exited by the player. Goodbye!'), nl
+        ;
+        game_loop(NewGameState))
+    ).
 
 % Handles the current player turn
 current_player_turn(game_state(Board, CurrentPlayer, Captured), NewGameState) :-
@@ -354,6 +362,11 @@ current_player_turn(game_state(Board, CurrentPlayer, Captured), NewGameState) :-
         read_move(Move);
         choose_move(game_state(Board, CurrentPlayer, Captured), 2, Move)),
     move(game_state(Board, CurrentPlayer, Captured), Move, NewGameState).
+
+current_player_turn(GameState, quit) :-
+    write('Enter your move (or type "quit" to exit): '), nl,
+    catch(read(Move), _, fail),
+    (Move = quit -> true; fail).
 
 % Placeholder predicates for required logic (to be implemented):
 % validate_move/2, winning_condition/1, evaluate_board/3
