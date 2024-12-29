@@ -217,6 +217,15 @@ print_row([Cell|Rest]) :-
 % Move Execution and Validation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%checks if a position in within bounds and does not already have a piece
+validate_move(Grid1, move(Row, Col)) :-
+    length(Grid1,Max),
+    Row >=1, Row =< Max,
+    Col >=1, Col =< Max,
+    nth1(Row,Grid1,TargetRow),
+    nth1(Col,TargetRow,Symbol),
+    Symbol == '_'.
+    
 % Executes a move if valid and updates the game state.
 move(game_state(Grid1, Grid2, Player1, Player2, RowMapping, ColMapping), move(Row, Col), game_state(NewGrid1, NewGrid2, Player2, Player1, RowMapping, ColMapping)) :-
     validate_move(Grid1, move(Row, Col)),
@@ -327,25 +336,43 @@ draw_condition(Grid1, Grid2) :-
     calculate_points(Grid1, Grid2, player2, Points2),
     Points1 = Points2.
 
+winning_condition(Grid1,Grid2) :-
+    calculate_points(Grid1, Grid2, player1, Points1),
+    calculate_points(Grid1, Grid2, player2, Points2),
+    Points1 < Points2.
+
+all_moves(Grid,Moves) :-
+    length(Grid,Max),
+    findall(move(Row,Col), (between(1,Max,Row),between(1,Max,Col)),Moves).
 % Returns all valid moves for the current game state.
-valid_moves(game_state(Grid1, _, _, _, _, _), ListOfMoves) :-
-    findall(move(Row, Col), validate_move(Grid1, move(Row, Col)), ListOfMoves).
+valid_moves(Grid1, ListOfMoves) :-
+    all_moves(Grid1,Moves),
+    findall(move(Row, Col), (member(move(Row,Col),Moves),validate_move(Grid1, move(Row, Col))), ListOfMoves).
+
 
 % Checks if the game is over and determines the winner
 game_over(game_state(Grid1, Grid2, _, _, _, _), Winner) :-
-    (winning_condition(Grid1) -> Winner = player1;
-     winning_condition(Grid2) -> Winner = player2;
-     draw_condition(Grid1, Grid2) -> Winner = draw;
-     fail).
+    valid_moves(Grid1,Moves1),
+    valid_moves(Grid2,Moves2),
+    length(Moves1,Lmoves1),
+    length(Moves2,Lmoves2),
+    Lmoves1 == 0, Lmoves2 == 0,
+    (winning_condition(Grid1,Grid2) -> Winner = player1;
+     winning_condition(Grid1,Grid2) -> Winner = player2;
+     draw_condition(Grid1, Grid2) -> Winner = draw), !, fail.
 
 % Evaluates the current game state and returns how bad or good it is for the current player
 value(game_state(Grid1, _, _, _, _, _), Player, Value) :-
     evaluate_board(Grid1, Player, Value).
 
+
+random_move(Grid,Move) :-
+        valid_moves(Grid,ListOfMoves),
+        random_member(Move,ListOfMoves).
 % Chooses a move for the computer player based on difficulty level (level 1 should return a random valid move and level 2 the best play with a greedy algorithm)
-choose_move(GameState, Level, Move) :-
-    (Level = 1 -> random_move(GameState, Move);
-     Level = 2 -> greedy_move(GameState, Move)).
+choose_move(Grid, Level, Move) :-
+    (Level = 1 -> random_move(Grid, Move);
+     Level = 2 -> greedy_move(Grid, Move)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Loop
