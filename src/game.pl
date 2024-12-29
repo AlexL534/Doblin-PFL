@@ -63,7 +63,7 @@ configure_game(1, Size, config(Name1, Name2, _, _, Size)) :-
 configure_game(2, Size, config(Name1, 'CPU', Level, _, Size)) :- 
     write('Human vs Computer selected.'), nl,
     get_player_name('Your', Name1),
-    get_ai_level(Level).
+    get_ai_level(Level,'CPU').
 
 configure_game(3, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
     write('Computer vs Computer selected.'), nl,
@@ -224,7 +224,7 @@ validate_move(Grid1, move(Row, Col)) :-
     Col >=1, Col =< Max,
     nth1(Row,Grid1,TargetRow),
     nth1(Col,TargetRow,Symbol),
-    Symbol == '_'.
+    Symbol == '_ '.
     
 % Executes a move if valid and updates the game state.
 move(game_state(Grid1, Grid2, Player1, Player2, RowMapping, ColMapping), move(Row, Col), game_state(NewGrid1, NewGrid2, Player2, Player1, RowMapping, ColMapping)) :-
@@ -350,6 +350,7 @@ all_moves(Grid,Moves) :-
 % Returns all valid moves for the current game state.
 valid_moves(Grid1, ListOfMoves) :-
     all_moves(Grid1,Moves),
+    write(Grid1),nl,
     findall(move(Row, Col), (member(move(Row,Col),Moves),validate_move(Grid1, move(Row, Col))), ListOfMoves).
 
 
@@ -359,6 +360,8 @@ game_over(game_state(Grid1, Grid2, _, _, _, _), Winner) :-
     valid_moves(Grid2,Moves2),
     length(Moves1,Lmoves1),
     length(Moves2,Lmoves2),
+    write('Valid Moves for player 1: '), write(Moves1),nl,
+    write('Valid Moves for player 2: '), write(Moves2),nl,
     Lmoves1 == 0, Lmoves2 == 0,
     (   winning_condition(Grid1, Grid2) -> 
         calculate_points(Grid1, player1, Points1),
