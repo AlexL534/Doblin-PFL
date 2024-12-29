@@ -275,9 +275,13 @@ draw_condition(Grid1, Grid2) :-
     calculate_points(Grid1, Grid2, player2, Points2),
     Points1 = Points2.
 
+all_moves(Grid,Moves) :-
+    length(Grid,Max),
+    findall(move(Row,Col), (between(1,Max,Row),between(1,Max,Col)),Moves).
 % Returns all valid moves for the current game state.
-valid_moves(game_state(Grid1, _, _, _, _, _), ListOfMoves) :-
-    findall(move(Row, Col), validate_move(Grid1, move(Row, Col)), ListOfMoves).
+valid_moves(Grid1, ListOfMoves) :-
+    all_moves(Grid1,Moves),
+    findall(move(Row, Col), (member(move(Row,Col),Moves),validate_move(Grid1, move(Row, Col))), ListOfMoves).
 
 
 % Checks if the game is over and determines the winner
