@@ -220,31 +220,73 @@ translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, Translate
 % Game Logic
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Merge the two grids into a larger one
-combine_grids(Grid1, Grid2, CombinedGrid) :-
-    length(Grid1, Rows),
-    transpose(Grid1, TransposedGrid1),
-    transpose(Grid2, TransposedGrid2),
-    append(TransposedGrid1, TransposedGrid2, CombinedGrid).
-
-% Counts the points for a player (number of lines or squares of 4 consecutive symbols)
-calculate_points(Grid1, Grid2, Player, Points) :-
-    combine_grids(Grid1, Grid2, CombinedGrid),
-    
-    % Count horizontal lines
-    findall(_, (nth1(Row, CombinedGrid, R), count_consecutive(R, Player, 4)), Horizontal),
-    
-    % Count vertical lines
-    transpose(CombinedGrid, TransposedGrid),
-    findall(_, (nth1(Col, TransposedGrid, C), count_consecutive(C, Player, 4)), Vertical),
-    
-    % Count diagonal lines (\ and /)
-    findall(_, (diagonal_lines(CombinedGrid, Player), count_consecutive(_, Player, 4)), Diagonals),
-    
+% Counts the points for a player in their respective grid
+calculate_points(Grid, Player, Points) :-
+    (Player = player1 -> Symbol = 'X'; Symbol = 'O'),
+    findall(_, horizontal_lines(Grid, Symbol, 4), Horizontal),
+    findall(_, vertical_lines(Grid, Symbol, 4), Vertical),
+    findall(_, diagonal_lines(Grid, Symbol, 4), Diagonals),
+    findall(_, squares_of_four(Grid, Symbol), Squares),
     length(Horizontal, HorizontalCount),
     length(Vertical, VerticalCount),
     length(Diagonals, DiagonalCount),
-    Points is HorizontalCount + VerticalCount + DiagonalCount.
+    length(Squares, SquareCount),
+    Points is HorizontalCount + VerticalCount + DiagonalCount + SquareCount.
+
+% Finds all horizontal lines of a given length
+horizontal_lines(Grid, Symbol, Length) :-
+    member(Row, Grid),
+    sublist([Symbol, Symbol, Symbol, Symbol], Row).
+
+% Finds all vertical lines of a given length
+vertical_lines(Grid, Symbol, Length) :-
+    transpose(Grid, TransposedGrid),
+    horizontal_lines(TransposedGrid, Symbol, Length).
+
+% Finds all diagonal lines (\ and /) of a given length
+diagonal_lines(Grid, Symbol, Length) :-
+    diagonals(Grid, Diagonals),
+    member(Diagonal, Diagonals),
+    sublist([Symbol, Symbol, Symbol, Symbol], Diagonal).
+
+% Extracts all diagonals (\ and /) from a grid
+diagonals(Grid, Diagonals) :-
+    length(Grid, Size),
+    findall(Diagonal, extract_diagonal(Grid, Size, Diagonal), Diagonals).
+
+% Extracts a single diagonal from the grid
+extract_diagonal(Grid, Size, Diagonal) :-
+    between(-Size, Size, Offset),
+    findall(Cell, (
+        between(1, Size, Row),
+        Col is Row + Offset,
+        within_bounds(Col, Size),
+        nth1(Row, Grid, GridRow),
+        nth1(Col, GridRow, Cell)
+    ), Diagonal).
+
+% Checks if a value is within bounds
+within_bounds(Value, Max) :-
+    Value >= 1, Value =< Max.
+
+% Finds all 2x2 squares of the same symbol
+squares_of_four(Grid, Symbol) :-
+    length(Grid, Size),
+    between(1, Size-1, Row),
+    between(1, Size-1, Col),
+    nth1(Row, Grid, Row1),
+    nth1(Col, Row1, Symbol),
+    NextRow is Row + 1,
+    nth1(NextRow, Grid, Row2),
+    nth1(Col, Row2, Symbol),
+    NextCol is Col + 1,
+    nth1(NextCol, Row1, Symbol),
+    nth1(NextCol, Row2, Symbol).
+
+% Sublist helper to match consecutive symbols
+sublist(Sub, List) :-
+    append(_, Rest, List),
+    append(Sub, _, Rest).
 
 % Count consecutive symbols in a row or column
 count_consecutive([], _, 0).
@@ -253,12 +295,6 @@ count_consecutive([Player|Rest], Player, Count) :-
     Count is RestCount + 1.
 count_consecutive([Other|_], Player, 0) :-
     Other \= Player.
-
-% Find diagonal lines considering both grids
-diagonal_lines(CombinedGrid, Player) :-
-    % You can implement this by checking both \ and / diagonals
-    % across the combined grid. Ensure you check both grids.
-    true.
 
 % Game over condition: Check if the game is a draw
 draw_condition(Grid1, Grid2) :-
