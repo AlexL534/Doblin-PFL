@@ -16,20 +16,29 @@ play :-
 % Displays the game menu and allows the players to configure game type, board size, and AI difficulty levels
 main_menu :-
     write('Welcome to Doblin!'), nl,
+    get_grid_size(Size),
+    write('1. Human vs Human'), nl,
+    write('2. Human vs Computer'), nl,
+    write('3. Computer vs Computer'), nl,
+    write('Choose an option: '), nl,
+    read(Choice),
+    (   member(Choice, [1, 2, 3])
+    ->  configure_game(Choice, Size, GameConfig),
+        initial_state(GameConfig, GameState),
+        game_loop(GameState)
+    ;   write('Invalid option! Please try again.'), nl,
+        main_menu
+    ).
+
+
+% Asks for and validates grid size
+get_grid_size(Size) :-
     write('Choose grid size (between 6 and 9): '),
     read(Size),
     (   Size >= 6, Size =< 9
-    ->  format('Grid size: ~w~n', [Size]),
-        write('1. Human vs Human'), nl,
-        write('2. Human vs Computer'), nl,
-        write('3. Computer vs Computer'), nl,
-        write('Choose an option: '), nl,
-        read(Choice),
-        configure_game(Choice, Size, GameConfig),
-        initial_state(GameConfig, GameState),
-        game_loop(GameState)
+    ->  true
     ;   write('Invalid grid size! Please choose a size between 6 and 9.'), nl,
-        main_menu  % Retry if size is invalid
+        get_grid_size(Size)
     ).
 
 % Helper predicate to ensure the name length does not exceed 16 characters.
@@ -37,40 +46,45 @@ valid_name(Name) :-
     atom_length(Name, Length),
     Length =< 16. 
 
-% Configures the game based on the menu selection.
+% Configures the game based on menu selection.
 configure_game(1, Size, config(Name1, Name2, _, _, Size)) :- 
     write('Human vs Human selected.'), nl,
-    write('Enter name for Player 1: '), 
-    read(Name1),
-    (   valid_name(Name1)
-    ->  true  % If name is valid, proceed
-    ;   write('Name cannot be longer than 16 characters. Please try again.'), nl,
-        configure_game(1, Size, config(Name1, Name2, _, _, Size))  % Re-enter the name
-    ),
-    write('Enter name for Player 2: '), 
-    read(Name2),
-    (   valid_name(Name2)
-    ->  true  % If name is valid, proceed
-    ;   write('Name cannot be longer than 16 characters. Please try again.'), nl,
-        configure_game(1, Size, config(Name1, Name2, _, _, Size))  % Re-enter the name
-    ).
+    get_player_name('Player 1', Name1),
+    get_player_name('Player 2', Name2).
 
 configure_game(2, Size, config(Name1, 'CPU', Level, _, Size)) :- 
     write('Human vs Computer selected.'), nl,
-    write('Enter your name: '),
-    read(Name1),
-    (   valid_name(Name1)
-    ->  true  % If name is valid, proceed
-    ;   write('Name cannot be longer than 16 characters. Please try again.'), nl,
-        configure_game(2, Size, config(Name1, 'CPU', Level, _, Size))  % Re-enter the name
-    ),
-    write('Choose computer difficulty (1: Easy, 2: Hard): '),
-    read(Level).
+    get_player_name('Your', Name1),
+    get_ai_level(Level).
 
 configure_game(3, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
     write('Computer vs Computer selected.'), nl,
-    write('Choose difficulty for CPU1 (1: Easy, 2: Hard): '), read(Level1),
-    write('Choose difficulty for CPU2 (1: Easy, 2: Hard): '), read(Level2).
+    get_ai_level(Level1, 'CPU1'),
+    get_ai_level(Level2, 'CPU2').
+
+% Prompts for player name
+get_player_name(PlayerLabel, Name) :-
+    format('Enter name for ~w: ', [PlayerLabel]),
+    read(Name),
+    (   valid_name(Name)
+    ->  true
+    ;   write('Name cannot exceed 16 characters. Please try again.'), nl,
+        get_player_name(PlayerLabel, Name)
+    ).
+
+% Prompts for AI difficulty
+get_ai_level(Level) :-
+    write('Choose computer difficulty (1: Easy, 2: Hard): '),
+    read(Level),
+    (   member(Level, [1, 2])
+    ->  true
+    ;   write('Invalid difficulty! Please choose 1 or 2.'), nl,
+        get_ai_level(Level)
+    ).
+
+get_ai_level(Level, Label) :-
+    format('Choose difficulty for ~w (1: Easy, 2: Hard): ', [Label]),
+    get_ai_level(Level).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Initialization and State
@@ -108,11 +122,11 @@ generate_mappings(Size, RowMapping, ColMapping) :-
 
 % Display the current game state
 display_game(game_state(Grid1, Grid2, Name1, Name2, CurrentPlayer, _)) :-
-    length(Grid1, Size),  % Get the grid size (assumes square grid)
+    length(Grid1, Size),
     write('Grids:'), nl,
     Width is Size * 3 - 2,
-    print_centered_with_offset(Name1, Width, 1),
-    print_centered_with_offset(Name2, Width, Width + 7), nl,  
+    print_player_names(Name1, Width, 2),
+    print_player_names(Name2, Width, Width + 7), nl,  
     generate_column_labels(Size, Player1Labels),  % Generate column labels for Player 1
     generate_column_labels(Size, Player2Labels),  % Generate column labels for Player 2
     print_column_labels(Player1Labels, Player2Labels),  % Print column labels for both grids
@@ -126,7 +140,7 @@ display_game(game_state(Grid1, Grid2, Name1, Name2, CurrentPlayer, _)) :-
     ).
 
 % Helper to print a name centered within a specific width with a dynamic offset
-print_centered_with_offset(Name, Width, Offset) :-
+print_player_names(Name, Width, Offset) :-
     atom(Name),  % Ensure Name is an atom
     atom_length(Name, NameLength),  % Get the length of the name
     Padding is Width - NameLength,  % Total padding needed with the dynamic offset
