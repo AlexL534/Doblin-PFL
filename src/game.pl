@@ -76,7 +76,7 @@ get_player_name(PlayerLabel, Name) :-
     catch(read(Input), _, fail),
     (   atom(Input), valid_name(Input)
     ->  Name = Input
-    ;   write('Invalid name! Please ensure it is an atom and does not exceed 16 characters.'), nl,
+    ;   write('Invalid name! Please enter a name using only letters and ensure it does not exceed 16 characters.'), nl,
         get_player_name(PlayerLabel, Name)
     ).
 
@@ -133,16 +133,21 @@ display_game(game_state(Grid1, Grid2, Name1, Name2, CurrentPlayer, _)) :-
     Width is Size * 3 - 2,
     print_player_names(Name1, Width, 2),
     print_player_names(Name2, Width, Width + 7), nl,  
-    generate_column_labels(Size, Player1Labels),  % Generate column labels for Player 1
-    generate_column_labels(Size, Player2Labels),  % Generate column labels for Player 2
-    print_column_labels(Player1Labels, Player2Labels),  % Print column labels for both grids
-    numlist(1, Size, Player1RowNumbers),  % Sequential row numbers for Player 1
-    random_permutation(Player1RowNumbers, Player2RowNumbers),  % Randomized row numbers for Player 2
-    print_side_by_side(Grid1, Grid2, Player1RowNumbers, Player2RowNumbers), % Print both grids side by side
-    nl, % Blank line between grids
+    generate_column_labels(Size, Player1Labels),
+    generate_column_labels(Size, Player2Labels),
+    print_column_labels(Player1Labels, Player2Labels), 
+    numlist(1, Size, Player1RowNumbers),  
+    random_permutation(Player1RowNumbers, Player2RowNumbers),  
+    print_side_by_side(Grid1, Grid2, Player1RowNumbers, Player2RowNumbers),
+    nl,
+    print_current_player(CurrentPlayer, Name1, Name2).
+
+
+% Helper predicate to print the current player
+print_current_player(CurrentPlayer, Name1, Name2) :-
     (   CurrentPlayer = Name1
-    ->  format('Current Player: ~w~n', [Name1])  % Player 1's turn
-    ;   format('Current Player: ~w~n', [Name2])  % Player 2's turn
+    ->  format('Current Player: ~w~n', [Name1])  % Player 1 turn
+    ;   format('Current Player: ~w~n', [Name2])  % Player 2 turn
     ).
 
 % Helper to print a name centered within a specific width with a dynamic offset
