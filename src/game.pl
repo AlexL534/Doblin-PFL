@@ -21,8 +21,8 @@ main_menu :-
     write('2. Human vs Computer'), nl,
     write('3. Computer vs Computer'), nl,
     write('Choose an option: '), nl,
-    read(Choice),
-    (   member(Choice, [1, 2, 3])
+    catch(read(Choice), _, fail),  % Catch invalid input
+    (   integer(Choice), member(Choice, [1, 2, 3])
     ->  configure_game(Choice, Size, GameConfig),
         initial_state(GameConfig, GameState),
         game_loop(GameState)
@@ -34,9 +34,9 @@ main_menu :-
 % Asks for and validates grid size
 get_grid_size(Size) :-
     write('Choose grid size (between 6 and 9): '),
-    read(Size),
-    (   Size >= 6, Size =< 9
-    ->  true
+    catch(read(Input), _, fail),  % Catch any invalid input
+    (   integer(Input), Input >= 6, Input =< 9
+    ->  Size = Input
     ;   write('Invalid grid size! Please choose a size between 6 and 9.'), nl,
         get_grid_size(Size)
     ).
@@ -65,19 +65,19 @@ configure_game(3, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
 % Prompts for player name
 get_player_name(PlayerLabel, Name) :-
     format('Enter name for ~w: ', [PlayerLabel]),
-    read(Name),
-    (   valid_name(Name)
-    ->  true
-    ;   write('Name cannot exceed 16 characters. Please try again.'), nl,
+    catch(read(Input), _, fail),  % Catch invalid input
+    (   atom(Input), valid_name(Input)
+    ->  Name = Input
+    ;   write('Invalid name! Please ensure it is an atom and does not exceed 16 characters.'), nl,
         get_player_name(PlayerLabel, Name)
     ).
 
 % Prompts for AI difficulty
 get_ai_level(Level) :-
     write('Choose computer difficulty (1: Easy, 2: Hard): '),
-    read(Level),
-    (   member(Level, [1, 2])
-    ->  true
+    catch(read(Input), _, fail),  % Catch invalid input
+    (   integer(Input), member(Input, [1, 2])
+    ->  Level = Input
     ;   write('Invalid difficulty! Please choose 1 or 2.'), nl,
         get_ai_level(Level)
     ).
