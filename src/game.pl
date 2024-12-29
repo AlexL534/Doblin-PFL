@@ -257,9 +257,9 @@ translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, Translate
 % Counts the points for a player in their respective grid
 calculate_points(Grid, Player, Points) :-
     (Player = player1 -> Symbol = 'X'; Symbol = 'O'),
-    findall(_, horizontal_lines(Grid, Symbol, 4), Horizontal),
-    findall(_, vertical_lines(Grid, Symbol, 4), Vertical),
-    findall(_, diagonal_lines(Grid, Symbol, 4), Diagonals),
+    findall(_, horizontal_lines(Grid, Symbol), Horizontal),
+    findall(_, vertical_lines(Grid, Symbol), Vertical),
+    findall(_, diagonal_lines(Grid, Symbol), Diagonals),
     findall(_, squares_of_four(Grid, Symbol), Squares),
     length(Horizontal, HorizontalCount),
     length(Vertical, VerticalCount),
@@ -267,18 +267,18 @@ calculate_points(Grid, Player, Points) :-
     length(Squares, SquareCount),
     Points is HorizontalCount + VerticalCount + DiagonalCount + SquareCount.
 
-% Finds all horizontal lines of a given length
-horizontal_lines(Grid, Symbol, Length) :-
+% Finds all horizontal lines of length 4
+horizontal_lines(Grid, Symbol) :-
     member(Row, Grid),
     sublist([Symbol, Symbol, Symbol, Symbol], Row).
 
-% Finds all vertical lines of a given length
-vertical_lines(Grid, Symbol, Length) :-
+% Finds all vertical lines of length 4
+vertical_lines(Grid, Symbol) :-
     transpose(Grid, TransposedGrid),
-    horizontal_lines(TransposedGrid, Symbol, Length).
+    horizontal_lines(TransposedGrid, Symbol).
 
-% Finds all diagonal lines (\ and /) of a given length
-diagonal_lines(Grid, Symbol, Length) :-
+% Finds all diagonal lines (\ and /) of length 4
+diagonal_lines(Grid, Symbol) :-
     diagonals(Grid, Diagonals),
     member(Diagonal, Diagonals),
     sublist([Symbol, Symbol, Symbol, Symbol], Diagonal).
@@ -347,6 +347,7 @@ winning_condition(Grid1,Grid2) :-
 all_moves(Grid,Moves) :-
     length(Grid,Max),
     findall(move(Row,Col), (between(1,Max,Row),between(1,Max,Col)),Moves).
+    
 % Returns all valid moves for the current game state.
 valid_moves(Grid1, ListOfMoves) :-
     all_moves(Grid1,Moves),
@@ -360,9 +361,7 @@ game_over(game_state(Grid1, Grid2, _, _, _, _), Winner) :-
     valid_moves(Grid2,Moves2),
     length(Moves1,Lmoves1),
     length(Moves2,Lmoves2),
-    write('Valid Moves for player 1: '), write(Moves1),nl,
-    write('Valid Moves for player 2: '), write(Moves2),nl,
-    Lmoves1 == 0, Lmoves2 == 0,
+    Lmoves1 == 0, Lmoves2 == 0, % No valid moves left for both players
     (   winning_condition(Grid1, Grid2) -> 
         calculate_points(Grid1, player1, Points1),
         calculate_points(Grid2, player2, Points2),
@@ -390,32 +389,50 @@ choose_move(Grid, Level, Move) :-
 % Runs the game loop, alternating turns between players
 game_loop(GameState) :-
     display_game(GameState),
+    print_valid_moves(GameState),
     (game_over(GameState, Winner) ->
-        format('Game Over! Winner: ~w~n', [Winner]);
+        announce_winner(Winner);
         current_player_turn(GameState, NewGameState),
         (NewGameState = quit ->
             write('Game exited by the player. Goodbye!'), nl;
         game_loop(NewGameState))
     ).
 
-% Handles the current player turn and alternates turns
-current_player_turn(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2)) :-
-    % Check whose turn it is (current player is CurrentPlayer)
-    (CurrentPlayer = Player1 -> 
-        (choose_move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2), 2, Move),
-         move(game_state(Grid1, Grid2, Player1, Player2), Move, game_state(NewGrid1, NewGrid2, Player2, Player1, Player2))
-        );
-        (choose_move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2), 1, Move),
-         move(game_state(Grid1, Grid2, Player1, Player2), Move, game_state(NewGrid1, NewGrid2, Player1, Player2))
-        )
-    ),
-    % Switch to the next player
-    (CurrentPlayer = Player1 -> NextPlayer = Player2; NextPlayer = Player1).
+announce_winner(Winner) :-
+    (Winner = draw->  
+        write('The game ended in a draw!'), nl;
+        format('Congratulations, ~w! You Won!', [Winner]), nl
+    ).
 
-current_player_turn(GameState, quit) :-
-    write('Enter your move (or type "quit" to exit): '), nl,
-    catch(read(Move), _, fail),
-    (Move = quit -> true; fail).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Player Turn Logic
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Handles current player turn
+current_player_turn(GameState, NewGameState) :-
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping),
+    (CurrentPlayer = Player1 ->
+        handle_player_turn(Grid1, Grid2, CurrentPlayer, RowMapping, ColMapping, NewGameState);
+        handle_computer_turn(Grid1, Grid2, Player2, RowMapping, ColMapping, NewGameState)).
+
+% Handles a human player turn
+handle_player_turn(Grid1, Grid2, Player, RowMapping, ColMapping, NewGameState) :-
+    format('~w, it\'s your turn! Enter your move (Row, Col) or type "quit" to exit: ', [Player]),
+    catch(read(Input), _, fail),
+    (Input = quit ->
+        NewGameState = quit;
+        Input = move(Row, Col),
+        (validate_move(Grid1, move(Row, Col)) ->
+            move(game_state(Grid1, Grid2, Player, _, _), move(Row, Col), NewGameState);
+            write('Invalid move! Try again.'), nl,
+            handle_player_turn(Grid1, Grid2, Player, RowMapping, ColMapping, NewGameState))).
+
+% Handles a computer player turn
+handle_computer_turn(Grid1, Grid2, Computer, RowMapping, ColMapping, NewGameState) :-
+    write('Computer is thinking...'), nl,
+    choose_move(Grid1, 1, Move), % Replace 1 with AI level if needed
+    move(game_state(Grid1, Grid2, Computer, _, _), Move, NewGameState),
+    format('Computer chose move: ~w~n', [Move]).
 
 % Placeholder predicates for required logic (to be implemented):
 % evaluate_board/3
