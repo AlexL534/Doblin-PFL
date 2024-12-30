@@ -388,17 +388,17 @@ valid_moves(Grid1, ListOfMoves) :-
 
 
 % Checks if the game is over and determines the winner
-game_over(game_state(Grid1, Grid2, _, _, _, _), Winner) :-
+game_over(game_state(Grid1, Grid2, _, _, _, _,_), Winner) :-
     valid_moves(Grid1,Moves1),
     valid_moves(Grid2,Moves2),
     length(Moves1,Lmoves1),
     length(Moves2,Lmoves2),
-    Lmoves1 == 0, Lmoves2 == 0, % No valid moves left for both players
-    (   winning_condition(Grid1, Grid2) -> 
+     % No valid moves left for both players
+    (   Lmoves1 == 0, Lmoves2 == 0 -> 
         calculate_points(Grid1, player1, Points1),
         calculate_points(Grid2, player2, Points2),
-        (Points1 > Points2 -> Winner = player1; Winner = player2);
-        draw_condition(Grid1, Grid2) -> Winner = draw
+        (Points1 == Points2 -> Winner = draw; (Points1 < Points2 -> Winner = player2 ; Winner = player1));
+        fail
     ).
 
 % Evaluates the current game state and returns how bad or good it is for the current player
@@ -421,8 +421,10 @@ choose_move(Grid, Level, Move) :-
 % Runs the game loop, alternating turns between players
 game_loop(GameState) :-
     display_game(GameState),
+    write('game_loop'),nl,
     (game_over(GameState, Winner) ->
-        announce_winner(Winner);
+        write('game finnished'),nl,
+        announce_winner(Winner),!;
         current_player_turn(GameState, NewGameState),
         (NewGameState = quit ->
             write('Game exited by the player. Goodbye!'), nl;
@@ -460,7 +462,8 @@ handle_player_turn(Grid1, Grid2, Player, Player1, Player2, RowMapping, ColMappin
 % Handles a computer player turn
 handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, NewGameState) :-
     write('Computer is thinking...'), nl,
-    (CurrentPlayer == Player1 -> choose_move(Grid1, 1, Move),write('Used grid1'),nl;choose_move(Grid2, 1, Move),write('Used grid2'),nl),
+    (CurrentPlayer == Player1 -> choose_move(Grid1, 1, Move),write('Used grid1'),nl;
+     choose_move(Grid2, 1, Move),write('Used grid2'),nl),
      % Replace 1 with AI level if needed
     move(game_state(Grid1, Grid2, CurrentPlayer,Player1, Player2,RowMapping,ColMapping), Move,NewGameState),
     format('Computer chose move: ~w~n', [Move]).
