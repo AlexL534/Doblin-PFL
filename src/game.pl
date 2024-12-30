@@ -216,6 +216,12 @@ print_row([Cell|Rest]) :-
     format('~w ', [Cell]),  
     print_row(Rest).
 
+display_quit_message(Player) :-
+    format('~w has quit the game. Thanks for playing!', [Player]), nl,
+    write('==========================================='), nl,
+    write('      [INFO] Player Abandonment Detected!  '), nl,
+    write('==========================================='), nl.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Move Execution and Validation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -452,12 +458,13 @@ current_player_turn(GameState, NewGameState) :-
 handle_player_turn(Grid1, Grid2, Player, Player1, Player2, RowMapping, ColMapping, NewGameState) :-
     format('~w, it\'s your turn! Enter your move (Row, Col) or type "quit" to exit: ', [Player]),
     catch(read(Input), _, fail),
-    (Input = quit ->
+    (   Input = quit ->
+        display_quit_message(Player),
         NewGameState = quit;
         Input = move(Row, Col),
         (move(game_state(Grid1, Grid2, Player,Player1, Player2, RowMapping,ColMapping), move(Row, Col) ,NewGameState);
             write('Invalid move! Try again.'), nl,
-            handle_player_turn(Grid1, Grid2, Player, Player1,Player2, RowMapping, ColMapping, NewGameState))).
+            handle_player_turn(Grid1, Grid2, Player, RowMapping, ColMapping, NewGameState))).
 
 % Handles a computer player turn
 handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, NewGameState) :-
