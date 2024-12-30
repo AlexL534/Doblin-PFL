@@ -411,7 +411,7 @@ random_move(Grid,Move) :-
         random_member(Move,ListOfMoves).
 % Chooses a move for the computer player based on difficulty level (level 1 should return a random valid move and level 2 the best play with a greedy algorithm)
 choose_move(Grid, Level, Move) :-
-    (Level = 1 -> random_move(Grid, Move);
+    (Level = 1 -> random_move(Grid, Move),!;
      Level = 2 -> greedy_move(Grid, Move)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -444,7 +444,7 @@ current_player_turn(GameState, NewGameState) :-
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping),
     (CurrentPlayer \== 'CPU' ->
         handle_player_turn(Grid1, Grid2, CurrentPlayer,Player1,Player2, RowMapping, ColMapping, NewGameState);
-        handle_computer_turn(Grid1, Grid2, Player2, RowMapping, ColMapping, NewGameState)).
+        handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, NewGameState)).
 
 % Handles a human player turn
 handle_player_turn(Grid1, Grid2, Player, Player1, Player2, RowMapping, ColMapping, NewGameState) :-
@@ -458,10 +458,10 @@ handle_player_turn(Grid1, Grid2, Player, Player1, Player2, RowMapping, ColMappin
             handle_player_turn(Grid1, Grid2, Player, Player1,Player2, RowMapping, ColMapping, NewGameState))).
 
 % Handles a computer player turn
-handle_computer_turn(Grid1, Grid2, Computer, RowMapping, ColMapping, NewGameState) :-
+handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, NewGameState) :-
     write('Computer is thinking...'), nl,
     choose_move(Grid1, 1, Move), % Replace 1 with AI level if needed
-    move(game_state(Grid1, Grid2, Computer, _, _), Move,NewGameState),
+    move(game_state(Grid1, Grid2, CurrentPlayer,Player1, Player2,RowMapping,ColMapping), Move,NewGameState),
     format('Computer chose move: ~w~n', [Move]).
 
 % Placeholder predicates for required logic (to be implemented):
