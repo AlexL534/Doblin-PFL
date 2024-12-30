@@ -100,11 +100,11 @@ get_ai_level(Level, Label) :-
 % Initializes the game state based on the configuration
 initial_state(config(Name1, Name2, _, _, Size), game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping)) :-
     CurrentPlayer = Name1,
-    initialize_grids(Size, Grid1, Grid2, RowMapping, ColMapping),
+    initialize_grids(Size, Grid1, Grid2),
     generate_mappings(Size, ColMapping, RowMapping).
 
 % Initializes two grids and their coordinate mappings
-initialize_grids(Size, Grid1, Grid2, RowMapping, ColMapping) :-
+initialize_grids(Size, Grid1, Grid2) :-
     create_empty_grid(Size, Grid1),
     create_empty_grid(Size, Grid2).
 
@@ -135,20 +135,17 @@ display_game(game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, C
     Width is Size * 3 - 2,
     print_player_names(Name1, Width, 2),
     print_player_names(Name2, Width, Width + 7), nl,  
-    print_column_labels(Size, RowMapping, ColMapping), 
-    print_side_by_side(Grid1, Grid2, RowMapping, ColMapping),
+    print_column_labels(Size, ColMapping), 
+    print_side_by_side(Grid1, Grid2, RowMapping),
     nl,
     print_current_player(CurrentPlayer, Name1, Name2).
 
-
-% Helper predicate to print the current player
 print_current_player(CurrentPlayer, Name1, Name2) :-
     (   CurrentPlayer = Name1
     ->  format('Current Player: ~w~n', [Name1])  % Player 1 turn
     ;   format('Current Player: ~w~n', [Name2])  % Player 2 turn
     ).
 
-% Helper to print a name centered within a specific width with a dynamic offset
 print_player_names(Name, Width, Offset) :-
     atom(Name),  % Ensure Name is an atom
     atom_length(Name, NameLength),  % Get the length of the name
@@ -158,44 +155,28 @@ print_player_names(Name, Width, Offset) :-
     format('~*|~s~*|', [LeftPadding + Offset, Name, RightPadding]).
 
 % Print column labels for both grids
-print_column_labels(Size, RowMapping, ColMapping) :-
+print_column_labels(Size, ColMapping) :-
     write('  '), % Space before column labels for Player 1
-    print_column_labels_in_order(Size),  % Write Player 1 labels with spacing
+    print_column_labels_in_order(Size),  % Write Player 1 labels
     write('   '), % Space between the grids
-    print_column_labels_based_on_mapping(ColMapping),  % Write Player 2 labels with spacing
+    print_column_labels_based_on_mapping(ColMapping),  % Write Player 2 labels
     nl.
 
-% Print column labels for Grid 1 in order (A, B, C, ...)
+% Print column labels for Grid 1
 print_column_labels_in_order(Size) :-
     numlist(1, Size, Numbers),
     maplist(generate_column_label, Numbers, Labels),
     print_aligned_labels(Labels).
 
-% Print column labels for Grid 2 based on ColMapping
+% Print column labels for Grid 2
 print_column_labels_based_on_mapping(ColMapping) :-
     maplist(generate_column_label, ColMapping, MappedLabels),
     print_aligned_labels(MappedLabels).
 
-% Print aligned column labels with two spaces between each label
 print_aligned_labels([]).
 print_aligned_labels([Label|Rest]) :-
     format('~w  ', [Label]),  % Two spaces after each label
     print_aligned_labels(Rest).
-
-% Print Grid 1 row labels in order
-print_row_labels_in_order(Size) :-
-    numlist(1, Size, RowLabels),
-    print_aligned_labels(RowLabels).
-
-% Print Grid 2 row labels based on RowMapping
-print_row_labels_based_on_mapping(RowMapping) :-
-    maplist(translate_row_label, RowMapping, MappedRowLabels),
-    print_aligned_labels(MappedRowLabels).
-
-% Generate column labels (e.g., ['A', 'B', 'C', ...] up to grid size)
-generate_column_labels(Size, Labels) :-
-    numlist(1, Size, Numbers),
-    maplist(generate_column_label, Numbers, Labels).
 
 % Generate column label for a given index (supports up to 'ZZ')
 generate_column_label(Index, Label) :-
@@ -213,11 +194,11 @@ generate_column_label(Index, Label) :-
         atom_codes(Label, [First, Second])
     ).
 
-% Print both grids side by side with proper row numbers
-print_side_by_side(Grid1, Grid2, RowMapping1, RowMapping2) :-
+% Print both grids side by side
+print_side_by_side(Grid1, Grid2, RowMapping) :-
     length(Grid1, Size),
     numlist(1, Size, Player1RowNumbers),  % Generate sequential row numbers for Player 1
-    print_side_by_side_rows(Grid1, Grid2, Player1RowNumbers, RowMapping2).
+    print_side_by_side_rows(Grid1, Grid2, Player1RowNumbers, RowMapping).
 
 % Helper to print rows side by side with correct row numbers
 print_side_by_side_rows([], [], [], []).
@@ -229,7 +210,6 @@ print_side_by_side_rows([Row1|Rest1], [Row2|Rest2], [Player1Row|RestPlayer1Rows]
     format(' ~d', [Player2Row]),  % Correct Player 2 row number (mapped)
     nl,
     print_side_by_side_rows(Rest1, Rest2, RestPlayer1Rows, RestPlayer2Rows).
-
 
 % Prints a single row
 print_row([]).
@@ -256,7 +236,6 @@ index_of([_|Tail], Element, Index):-
   !,
   Index is Index1+1.
 
-
 reverseMapping(Mapping, ReverseMapping) :-
     length(Mapping, Size),
     numlist(1, Size, InitialReverseMapping),
@@ -268,8 +247,6 @@ reverseMappingAux([Elem|Tail], Index, CurrentReverseMapping, ReverseMapping) :-
     nth1(Elem, UpdatedReverseMapping, Index, TempReverseMapping), % Insert Index at position Elem
     NextIndex is Index + 1,
     reverseMappingAux(Tail, NextIndex, UpdatedReverseMapping, ReverseMapping).
-
-
 
 
 % checks if a position in within bounds and does not already have a piece
@@ -387,25 +364,6 @@ sublist(Sub, List) :-
     append(_, Rest, List),
     append(Sub, _, Rest).
 
-% Count consecutive symbols in a row or column
-count_consecutive([], _, 0).
-count_consecutive([Player|Rest], Player, Count) :-
-    count_consecutive(Rest, Player, RestCount),
-    Count is RestCount + 1.
-count_consecutive([Other|_], Player, 0) :-
-    Other \= Player.
-
-% Game over condition: Check if the game is a draw
-draw_condition(Grid1, Grid2) :-
-    calculate_points(Grid1, player1, Points1),
-    calculate_points(Grid2, player2, Points2),
-    Points1 = Points2.
-
-winning_condition(Grid1,Grid2) :-
-    calculate_points(Grid1, player1, Points1),
-    calculate_points(Grid2, player2, Points2),
-    Points1 < Points2.
-
 all_moves(Grid,Moves) :-
     length(Grid,Max),
     findall(move(Row,Col), (between(1,Max,Row),between(1,Max,Col)),Moves).
@@ -414,7 +372,6 @@ all_moves(Grid,Moves) :-
 valid_moves(Grid1, ListOfMoves) :-
     all_moves(Grid1,Moves),
     findall(move(Row, Col), (member(move(Row,Col),Moves),validate_move(Grid1, move(Row, Col))), ListOfMoves).
-
 
 % Checks if the game is over and determines the winner
 game_over(game_state(Grid1, Grid2, _, _, _, _,_), Winner) :-
@@ -426,7 +383,7 @@ game_over(game_state(Grid1, Grid2, _, _, _, _,_), Winner) :-
     (   Lmoves1 == 0, Lmoves2 == 0 -> 
         calculate_points(Grid1, player1, Points1),
         calculate_points(Grid2, player2, Points2),
-        (Points1 == Points2 -> Winner = draw; (Points1 < Points2 -> Winner = player2 ; Winner = player1));
+        (Points1 == Points2 -> Winner = draw; (Points1 < Points2 -> Winner = player2; Winner = player1));
         fail
     ).
 
@@ -434,10 +391,10 @@ game_over(game_state(Grid1, Grid2, _, _, _, _,_), Winner) :-
 value(game_state(Grid1, _, _, _, _, _), Player, Value) :-
     evaluate_board(Grid1, Player, Value).
 
-
 random_move(Grid,Move) :-
         valid_moves(Grid,ListOfMoves),
         random_member(Move,ListOfMoves).
+        
 % Chooses a move for the computer player based on difficulty level (level 1 should return a random valid move and level 2 the best play with a greedy algorithm)
 choose_move(Grid, Level, Move) :-
     (Level = 1 -> random_move(Grid, Move),!;
@@ -474,11 +431,11 @@ announce_winner(Winner) :-
 current_player_turn(GameState, NewGameState) :-
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping),
     (CurrentPlayer \== 'CPU',CurrentPlayer \== 'CPU1',CurrentPlayer \== 'CPU2' ->
-        handle_player_turn(Grid1, Grid2, CurrentPlayer,Player1,Player2, RowMapping, ColMapping, NewGameState);
+        handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState);
         handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, NewGameState)).
 
 % Handles a human player turn
-handle_player_turn(Grid1, Grid2, Player, Player1, Player2, RowMapping, ColMapping, NewGameState) :-
+handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState) :-
     format('~w, it\'s your turn! Enter your move (Row, Col) or type "quit" to exit: ', [Player]),
     catch(read(Input), _, fail),
     (   Input = quit ->
@@ -487,7 +444,7 @@ handle_player_turn(Grid1, Grid2, Player, Player1, Player2, RowMapping, ColMappin
         Input = move(Row, Col),
         (move(game_state(Grid1, Grid2, Player,Player1, Player2, RowMapping,ColMapping), move(Row, Col) ,NewGameState);
             write('Invalid move! Try again.'), nl,
-            handle_player_turn(Grid1, Grid2, Player, RowMapping, ColMapping, NewGameState))).
+            handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState))).
 
 % Handles a computer player turn
 handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, NewGameState) :-
