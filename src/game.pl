@@ -51,6 +51,7 @@ get_grid_size(Size) :-
 
 % Ensures name does not exceed 16 characters
 valid_name(Name) :-
+    Name \== 'CPU',
     atom_length(Name, Length),
     Length =< 16. 
 
@@ -253,8 +254,11 @@ validate_move(Grid1, move(Row, Col)) :-
     
 % Executes a move if valid and updates the game state.
 move(game_state(Grid1, Grid2,CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, Col) ,game_state(NewGrid1, NewGrid2, NextPlayer, Player1,Player2, RowMapping, ColMapping)) :-
-    (CurrentPlayer == Player1 -> NextPlayer = Player2,
+    (CurrentPlayer == Player1 ->
+     validate_move(Grid1,move(Row,Col)),
+     NextPlayer = Player2,
     place_symbol('X ',Grid1, Grid2, Row, Col,  RowMapping, ColMapping, NewGrid1, NewGrid2);
+     validate_move(Grid2,move(Row,Col)),
      NextPlayer = Player1,
      reverseMapping(RowMapping,ReverseRowMapping),
      reverseMapping(ColMapping,ReverseColMapping),
@@ -448,9 +452,8 @@ handle_player_turn(Grid1, Grid2, Player, Player1, Player2, RowMapping, ColMappin
     catch(read(Input), _, fail),
     (Input = quit ->
         NewGameState = quit;
-        Input = move(Row, Col), write(Row),nl,write(Col),nl,
-        (validate_move(Grid1, move(Row, Col)) ->
-            move(game_state(Grid1, Grid2, Player,Player1, Player2, RowMapping,ColMapping), move(Row, Col) ,NewGameState);
+        Input = move(Row, Col),
+        (move(game_state(Grid1, Grid2, Player,Player1, Player2, RowMapping,ColMapping), move(Row, Col) ,NewGameState);
             write('Invalid move! Try again.'), nl,
             handle_player_turn(Grid1, Grid2, Player, Player1,Player2, RowMapping, ColMapping, NewGameState))).
 
