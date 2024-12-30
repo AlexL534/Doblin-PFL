@@ -249,9 +249,9 @@ update_grid(Grid, Row, Col, Symbol, NewGrid) :-
     nth1(Row, NewGrid, NewRow, TempGrid).
 
 % Translates coordinates for the second grid.
-translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol) :-
-    nth1(Row, RowMapping, TranslatedRow),
-    nth1(Col, ColMapping, TranslatedCol).
+translate_coordinates(Row, Col, RowMapping, ColMapping, NewRow, NewCol) :-
+    nth1(Row, RowMapping, NewRow),
+    nth1(Col, ColMapping, NewCol).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Logic
@@ -413,7 +413,7 @@ announce_winner(Winner) :-
 current_player_turn(GameState, NewGameState) :-
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping),
     (CurrentPlayer \== 'CPU' ->
-        handle_player_turn(Grid1, Grid2, CurrentPlayer, RowMapping, ColMapping, NewGameState);
+        handle_player_turn(Grid1, Grid2, CurrentPlayer,Player1,Player2, RowMapping, ColMapping, NewGameState);
         handle_computer_turn(Grid1, Grid2, Player2, RowMapping, ColMapping, NewGameState)).
 
 % Handles a human player turn
@@ -426,7 +426,7 @@ handle_player_turn(Grid1, Grid2, Player, Player1, Player2, RowMapping, ColMappin
         (validate_move(Grid1, move(Row, Col)) ->
             move(game_state(Grid1, Grid2, Player,Player1, Player2, RowMapping,ColMapping), move(Row, Col),'X ' ,NewGameState);
             write('Invalid move! Try again.'), nl,
-            handle_player_turn(Grid1, Grid2, Player, RowMapping, ColMapping, NewGameState))).
+            handle_player_turn(Grid1, Grid2, Player, Player1,Player2, RowMapping, ColMapping, NewGameState))).
 
 % Handles a computer player turn
 handle_computer_turn(Grid1, Grid2, Computer, RowMapping, ColMapping, NewGameState) :-
