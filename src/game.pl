@@ -2,7 +2,6 @@
 
 :- use_module(library(lists)).
 :- use_module(library(random)).
-:- use_module(library(random_between)).
 :- use_module(library(between)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -260,15 +259,16 @@ validate_move(Grid1, move(Row, Col)) :-
     
 % Executes a move if valid and updates the game state.
 move(game_state(Grid1, Grid2,CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, Col) ,game_state(NewGrid1, NewGrid2, NextPlayer, Player1,Player2, RowMapping, ColMapping)) :-
-    (CurrentPlayer == Player1 ->
-     validate_move(Grid1,move(Row,Col)),
-     NextPlayer = Player2,
-    place_symbol('X ',Grid1, Grid2, Row, Col,  RowMapping, ColMapping, NewGrid1, NewGrid2);
-     validate_move(Grid2,move(Row,Col)),
-     NextPlayer = Player1,
-     reverseMapping(RowMapping,ReverseRowMapping),
-     reverseMapping(ColMapping,ReverseColMapping),
-    place_symbol('O ',Grid2, Grid1, Row, Col,  ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1)).
+    (   CurrentPlayer == Player1 ->
+        validate_move(Grid1,move(Row,Col)),
+        NextPlayer = Player2,
+        place_symbol('X ',Grid1, Grid2, Row, Col,  RowMapping, ColMapping, NewGrid1, NewGrid2);
+        validate_move(Grid2,move(Row,Col)),
+        NextPlayer = Player1,
+        reverseMapping(RowMapping,ReverseRowMapping),
+        reverseMapping(ColMapping,ReverseColMapping),
+        place_symbol('O ',Grid2, Grid1, Row, Col,  ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1)
+    ).
 
 % Places a symbol on both grids according to the mappings.
 place_symbol(Symbol,Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
@@ -293,7 +293,7 @@ translate_coordinates(Row, Col, RowMapping, ColMapping, NewRow, NewCol) :-
 % Game Logic
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Counts the points for a player in their respective grid
+% Counts how many lines of 4 or squares a player has in their own grid
 calculate_points(Grid, Player, Points) :-
     (Player = player1 -> Symbol = 'X'; Symbol = 'O'),
     findall(_, horizontal_lines(Grid, Symbol), Horizontal),
@@ -306,26 +306,38 @@ calculate_points(Grid, Player, Points) :-
     length(Squares, SquareCount),
     Points is HorizontalCount + VerticalCount + DiagonalCount + SquareCount.
 
-% Finds all horizontal lines of length 4
+% Finds all horizontal lines of length 4 of a certain symbol
 horizontal_lines(Grid, Symbol) :-
     member(Row, Grid),
-    sublist([Symbol, Symbol, Symbol, Symbol], Row).
+    length(Row, Length),
+    MaxStart is Length - 3,
+    between(1, MaxStart, Start),
+    sublist_from(Row, Start, [Symbol, Symbol, Symbol, Symbol]).
 
-% Finds all vertical lines of length 4
+% Finds all vertical lines of length 4 of a certain symbol
 vertical_lines(Grid, Symbol) :-
     transpose(Grid, TransposedGrid),
     horizontal_lines(TransposedGrid, Symbol).
 
-% Finds all diagonal lines (\ and /) of length 4
+% Finds all diagonal lines (\ and /) of length 4 of a certain symbol
 diagonal_lines(Grid, Symbol) :-
     diagonals(Grid, Diagonals),
     member(Diagonal, Diagonals),
-    sublist([Symbol, Symbol, Symbol, Symbol], Diagonal).
+    sublist_from(Diagonal, 1, [Symbol, Symbol, Symbol, Symbol]).
+
+% Helper to extract a sublist starting from a given index
+sublist_from(List, Start, Sublist) :-
+    length(Prefix, Start),
+    append(Prefix, Rest, List),
+    length(Sublist, 4),
+    prefix(Sublist, Rest).
 
 % Extracts all diagonals (\ and /) from a grid
 diagonals(Grid, Diagonals) :-
     length(Grid, Size),
-    findall(Diagonal, extract_diagonal(Grid, Size, Diagonal), Diagonals).
+    findall(Diagonal, extract_diagonal(Grid, Size, Diagonal), Diagonals1),
+    findall(Diagonal, extract_reverse_diagonal(Grid, Size, Diagonal), Diagonals2),
+    append(Diagonals1, Diagonals2, Diagonals).
 
 % Extracts a single diagonal from the grid
 extract_diagonal(Grid, Size, Diagonal) :-
@@ -334,7 +346,19 @@ extract_diagonal(Grid, Size, Diagonal) :-
     between(MinOffset, MaxOffset, Offset), 
     findall(Cell, (
         between(1, Size, Row),
-        Col is Row + Offset,
+        Col is Row + Offset,   % For '\ ' direction
+        within_bounds(Col, Size),
+        nth1(Row, Grid, GridRow),
+        nth1(Col, GridRow, Cell)
+    ), Diagonal).
+
+extract_reverse_diagonal(Grid, Size, Diagonal) :-
+    MaxOffset is Size - 1,
+    MinOffset is -(MaxOffset),
+    between(MinOffset, MaxOffset, Offset),
+    findall(Cell, (
+        between(1, Size, Row),
+        Col is Row - Offset,  % For '/' direction
         within_bounds(Col, Size),
         nth1(Row, Grid, GridRow),
         nth1(Col, GridRow, Cell)
@@ -359,11 +383,6 @@ squares_of_four(Grid, Symbol) :-
     nth1(NextCol, Row1, Symbol),
     nth1(NextCol, Row2, Symbol).
 
-% Sublist helper to match consecutive symbols
-sublist(Sub, List) :-
-    append(_, Rest, List),
-    append(Sub, _, Rest).
-
 all_moves(Grid,Moves) :-
     length(Grid,Max),
     findall(move(Row,Col), (between(1,Max,Row),between(1,Max,Col)),Moves).
@@ -374,16 +393,20 @@ valid_moves(Grid1, ListOfMoves) :-
     findall(move(Row, Col), (member(move(Row,Col),Moves),validate_move(Grid1, move(Row, Col))), ListOfMoves).
 
 % Checks if the game is over and determines the winner
-game_over(game_state(Grid1, Grid2, _, _, _, _,_), Winner) :-
+game_over(game_state(Grid1, Grid2, _, _, _, _, _), Winner) :-
     valid_moves(Grid1,Moves1),
     valid_moves(Grid2,Moves2),
     length(Moves1,Lmoves1),
     length(Moves2,Lmoves2),
-     % No valid moves left for both players
+    % No valid moves left for both players
     (   Lmoves1 == 0, Lmoves2 == 0 -> 
         calculate_points(Grid1, player1, Points1),
         calculate_points(Grid2, player2, Points2),
-        (Points1 == Points2 -> Winner = draw; (Points1 < Points2 -> Winner = player2; Winner = player1));
+        (   Points1 == Points2 -> Winner = draw;
+            (   Points1 < Points2 -> Winner = player1;
+                Winner = player2
+            )
+        );
         fail
     ).
 
@@ -409,7 +432,7 @@ game_loop(GameState) :-
     display_game(GameState),
     write('game_loop'), nl,
     (   game_over(GameState, Winner) ->
-        write('game finnished'), nl,
+        write('game finished'), nl,
         announce_winner(Winner), !;
         current_player_turn(GameState, NewGameState),
         (   NewGameState = quit ->
@@ -442,10 +465,12 @@ handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, Co
     (   Input = quit ->
         display_quit_message(CurrentPlayer),
         NewGameState = quit;
-        Input = move(Row, Col),
-        (move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, Col), NewGameState);
+        (   Input = move(Row, Col),
+            (move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, Col), NewGameState) -> true;
             write('Invalid move! Try again.'), nl,
-            handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState))).
+            handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState))
+        )
+    ).
 
 % Handles a computer player turn
 handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, NewGameState) :-
