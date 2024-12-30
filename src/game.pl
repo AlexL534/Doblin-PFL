@@ -219,6 +219,29 @@ print_row([Cell|Rest]) :-
 % Move Execution and Validation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% utility predicate to find the index of an element in a list
+index_of([Element|_], Element, 0):- !.
+index_of([_|Tail], Element, Index):-
+  index_of(Tail, Element, Index1),
+  !,
+  Index is Index1+1.
+
+
+reverseMapping(Mapping, ReverseMapping) :-
+    length(Mapping, Size),
+    numlist(1, Size, InitialReverseMapping),
+    reverseMappingAux(Mapping, 1, InitialReverseMapping, ReverseMapping).
+
+reverseMappingAux([], _, ReverseMapping, ReverseMapping).
+reverseMappingAux([Elem|Tail], Index, CurrentReverseMapping, ReverseMapping) :-
+    nth1(Elem, CurrentReverseMapping, _, TempReverseMapping), % Remove the element at position Elem
+    nth1(Elem, UpdatedReverseMapping, Index, TempReverseMapping), % Insert Index at position Elem
+    NextIndex is Index + 1,
+    reverseMappingAux(Tail, NextIndex, UpdatedReverseMapping, ReverseMapping).
+
+
+
+
 % checks if a position in within bounds and does not already have a piece
 validate_move(Grid1, move(Row, Col)) :-
     length(Grid1,Max),
@@ -233,7 +256,9 @@ move(game_state(Grid1, Grid2,CurrentPlayer, Player1, Player2, RowMapping, ColMap
     (CurrentPlayer == Player1 -> NextPlayer = Player2,
     place_symbol('X ',Grid1, Grid2, Row, Col,  RowMapping, ColMapping, NewGrid1, NewGrid2);
      NextPlayer = Player1,
-    place_symbol('O ',Grid1, Grid2, Row, Col,  RowMapping, ColMapping, NewGrid1, NewGrid2)).
+     reverseMapping(RowMapping,ReverseRowMapping),
+     reverseMapping(ColMapping,ReverseColMapping),
+    place_symbol('O ',Grid2, Grid1, Row, Col,  ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1)).
 
 % Places a symbol on both grids according to the mappings.
 place_symbol(Symbol,Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
