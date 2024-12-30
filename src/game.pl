@@ -226,12 +226,7 @@ display_quit_message(Player) :-
 % Move Execution and Validation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% utility predicate to find the index of an element in a list
-index_of([Element|_], Element, 0):- !.
-index_of([_|Tail], Element, Index):-
-  index_of(Tail, Element, Index1),
-  !,
-  Index is Index1+1.
+
 
 
 reverseMapping(Mapping, ReverseMapping) :-
@@ -427,7 +422,6 @@ choose_move(Grid, Level, Move) :-
 % Runs the game loop, alternating turns between players
 game_loop(GameState) :-
     display_game(GameState),
-    write('game_loop'),nl,
     (game_over(GameState, Winner) ->
         write('game finnished'),nl,
         announce_winner(Winner),!;
