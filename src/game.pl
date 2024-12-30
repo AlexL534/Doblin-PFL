@@ -407,14 +407,15 @@ choose_move(Grid, Level, Move) :-
 % Runs the game loop, alternating turns between players
 game_loop(GameState) :-
     display_game(GameState),
-    write('game_loop'),nl,
-    (game_over(GameState, Winner) ->
-        write('game finnished'),nl,
-        announce_winner(Winner),!;
+    write('game_loop'), nl,
+    (   game_over(GameState, Winner) ->
+        write('game finnished'), nl,
+        announce_winner(Winner), !;
         current_player_turn(GameState, NewGameState),
-        (NewGameState = quit ->
+        (   NewGameState = quit ->
             write('Game exited by the player. Goodbye!'), nl;
-        game_loop(NewGameState))
+            game_loop(NewGameState)
+        )
     ).
 
 announce_winner(Winner) :-
@@ -430,19 +431,19 @@ announce_winner(Winner) :-
 % Handles current player turn
 current_player_turn(GameState, NewGameState) :-
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping),
-    (CurrentPlayer \== 'CPU',CurrentPlayer \== 'CPU1',CurrentPlayer \== 'CPU2' ->
+    (CurrentPlayer \== 'CPU', CurrentPlayer \== 'CPU1', CurrentPlayer \== 'CPU2' ->
         handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState);
-        handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, NewGameState)).
+        handle_computer_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState)).
 
 % Handles a human player turn
 handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState) :-
-    format('~w, it\'s your turn! Enter your move (Row, Col) or type "quit" to exit: ', [Player]),
+    format('~w, it\'s your turn! Enter your move (Row, Col) or type "quit" to exit: ', [CurrentPlayer]),
     catch(read(Input), _, fail),
     (   Input = quit ->
-        display_quit_message(Player),
+        display_quit_message(CurrentPlayer),
         NewGameState = quit;
         Input = move(Row, Col),
-        (move(game_state(Grid1, Grid2, Player,Player1, Player2, RowMapping,ColMapping), move(Row, Col) ,NewGameState);
+        (move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, Col), NewGameState);
             write('Invalid move! Try again.'), nl,
             handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState))).
 
