@@ -136,9 +136,7 @@ display_game(game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, C
     print_player_names(Name1, Width, 2),
     print_player_names(Name2, Width, Width + 7), nl,  
     print_column_labels(Size, RowMapping, ColMapping), 
-    numlist(1, Size, Player1RowNumbers),  
-    random_permutation(Player1RowNumbers, Player2RowNumbers),  
-    print_side_by_side(Grid1, Grid2, Player1RowNumbers, Player2RowNumbers),
+    print_side_by_side(Grid1, Grid2, RowMapping, ColMapping),
     nl,
     print_current_player(CurrentPlayer, Name1, Name2).
 
@@ -178,12 +176,21 @@ print_column_labels_based_on_mapping(ColMapping) :-
     maplist(generate_column_label, ColMapping, MappedLabels),
     print_aligned_labels(MappedLabels).
 
-
 % Print aligned column labels with two spaces between each label
 print_aligned_labels([]).
 print_aligned_labels([Label|Rest]) :-
     format('~w  ', [Label]),  % Two spaces after each label
     print_aligned_labels(Rest).
+
+% Print Grid 1 row labels in order
+print_row_labels_in_order(Size) :-
+    numlist(1, Size, RowLabels),
+    print_aligned_labels(RowLabels).
+
+% Print Grid 2 row labels based on RowMapping
+print_row_labels_based_on_mapping(RowMapping) :-
+    maplist(translate_row_label, RowMapping, MappedRowLabels),
+    print_aligned_labels(MappedRowLabels).
 
 % Generate column labels (e.g., ['A', 'B', 'C', ...] up to grid size)
 generate_column_labels(Size, Labels) :-
