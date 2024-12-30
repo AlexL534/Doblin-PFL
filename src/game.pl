@@ -98,15 +98,15 @@ get_ai_level(Level, Label) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Initializes the game state based on the configuration
-initial_state(config(Name1, Name2, _, _, Size), game_state(Grid1, Grid2,CurrentPlayer ,Name1, Name2, RowMapping, ColMapping)) :-
+initial_state(config(Name1, Name2, _, _, Size), game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping)) :-
     CurrentPlayer = Name1,
-    initialize_grids(Size, Grid1, Grid2, RowMapping, ColMapping).
+    initialize_grids(Size, Grid1, Grid2, RowMapping, ColMapping),
+    generate_mappings(Size, ColMapping, RowMapping).
 
 % Initializes two grids and their coordinate mappings
 initialize_grids(Size, Grid1, Grid2, RowMapping, ColMapping) :-
     create_empty_grid(Size, Grid1),
-    create_empty_grid(Size, Grid2),
-    generate_mappings(Size, RowMapping, ColMapping).
+    create_empty_grid(Size, Grid2).
 
 % Creates an empty grid of the specified size, filled with '_'
 create_empty_grid(Size, Grid) :-
@@ -129,16 +129,13 @@ generate_mappings(Size, RowMapping, ColMapping) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Display the current game state
-display_game(game_state(Grid1, Grid2,CurrentPlayer, Name1, Name2, _,_)) :-
+display_game(game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping)) :-
     length(Grid1, Size),
     write('Grids:'), nl,
     Width is Size * 3 - 2,
     print_player_names(Name1, Width, 2),
     print_player_names(Name2, Width, Width + 7), nl,  
-    generate_column_labels(Size, Player1Labels),
-    generate_column_labels(Size, Player2Labels),
-    random_permutation(Player2Labels, RandomizedPlayer2Labels),
-    print_column_labels(Player1Labels, RandomizedPlayer2Labels), 
+    print_column_labels(Size, RowMapping, ColMapping), 
     numlist(1, Size, Player1RowNumbers),  
     random_permutation(Player1RowNumbers, Player2RowNumbers),  
     print_side_by_side(Grid1, Grid2, Player1RowNumbers, Player2RowNumbers),
@@ -163,12 +160,24 @@ print_player_names(Name, Width, Offset) :-
     format('~*|~s~*|', [LeftPadding + Offset, Name, RightPadding]).
 
 % Print column labels for both grids
-print_column_labels(Player1Labels, Player2Labels) :-
+print_column_labels(Size, RowMapping, ColMapping) :-
     write('  '), % Space before column labels for Player 1
-    print_aligned_labels(Player1Labels),  % Write Player 1 labels with spacing
+    print_column_labels_in_order(Size),  % Write Player 1 labels with spacing
     write('   '), % Space between the grids
-    print_aligned_labels(Player2Labels),  % Write Player 2 labels with spacing
+    print_column_labels_based_on_mapping(ColMapping),  % Write Player 2 labels with spacing
     nl.
+
+% Print column labels for Grid 1 in order (A, B, C, ...)
+print_column_labels_in_order(Size) :-
+    numlist(1, Size, Numbers),
+    maplist(generate_column_label, Numbers, Labels),
+    print_aligned_labels(Labels).
+
+% Print column labels for Grid 2 based on ColMapping
+print_column_labels_based_on_mapping(ColMapping) :-
+    maplist(generate_column_label, ColMapping, MappedLabels),
+    print_aligned_labels(MappedLabels).
+
 
 % Print aligned column labels with two spaces between each label
 print_aligned_labels([]).
