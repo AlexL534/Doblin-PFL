@@ -51,6 +51,7 @@ get_grid_size(Size) :-
 
 % Ensures name does not exceed 16 characters
 valid_name(Name) :-
+    Name \== 'CPU',
     atom_length(Name, Length),
     Length =< 16. 
 
@@ -225,6 +226,29 @@ display_quit_message(Player) :-
 % Move Execution and Validation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% utility predicate to find the index of an element in a list
+index_of([Element|_], Element, 0):- !.
+index_of([_|Tail], Element, Index):-
+  index_of(Tail, Element, Index1),
+  !,
+  Index is Index1+1.
+
+
+reverseMapping(Mapping, ReverseMapping) :-
+    length(Mapping, Size),
+    numlist(1, Size, InitialReverseMapping),
+    reverseMappingAux(Mapping, 1, InitialReverseMapping, ReverseMapping).
+
+reverseMappingAux([], _, ReverseMapping, ReverseMapping).
+reverseMappingAux([Elem|Tail], Index, CurrentReverseMapping, ReverseMapping) :-
+    nth1(Elem, CurrentReverseMapping, _, TempReverseMapping), % Remove the element at position Elem
+    nth1(Elem, UpdatedReverseMapping, Index, TempReverseMapping), % Insert Index at position Elem
+    NextIndex is Index + 1,
+    reverseMappingAux(Tail, NextIndex, UpdatedReverseMapping, ReverseMapping).
+
+
+
+
 % checks if a position in within bounds and does not already have a piece
 validate_move(Grid1, move(Row, Col)) :-
     length(Grid1,Max),
@@ -236,10 +260,15 @@ validate_move(Grid1, move(Row, Col)) :-
     
 % Executes a move if valid and updates the game state.
 move(game_state(Grid1, Grid2,CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, Col) ,game_state(NewGrid1, NewGrid2, NextPlayer, Player1,Player2, RowMapping, ColMapping)) :-
-    (CurrentPlayer == Player1 -> NextPlayer = Player2,
+    (CurrentPlayer == Player1 ->
+     validate_move(Grid1,move(Row,Col)),
+     NextPlayer = Player2,
     place_symbol('X ',Grid1, Grid2, Row, Col,  RowMapping, ColMapping, NewGrid1, NewGrid2);
+     validate_move(Grid2,move(Row,Col)),
      NextPlayer = Player1,
-    place_symbol('O ',Grid1, Grid2, Row, Col,  RowMapping, ColMapping, NewGrid1, NewGrid2)).
+     reverseMapping(RowMapping,ReverseRowMapping),
+     reverseMapping(ColMapping,ReverseColMapping),
+    place_symbol('O ',Grid2, Grid1, Row, Col,  ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1)).
 
 % Places a symbol on both grids according to the mappings.
 place_symbol(Symbol,Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
@@ -388,7 +417,7 @@ random_move(Grid,Move) :-
         random_member(Move,ListOfMoves).
 % Chooses a move for the computer player based on difficulty level (level 1 should return a random valid move and level 2 the best play with a greedy algorithm)
 choose_move(Grid, Level, Move) :-
-    (Level = 1 -> random_move(Grid, Move);
+    (Level = 1 -> random_move(Grid, Move),!;
      Level = 2 -> greedy_move(Grid, Move)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -419,9 +448,9 @@ announce_winner(Winner) :-
 % Handles current player turn
 current_player_turn(GameState, NewGameState) :-
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping),
-    (CurrentPlayer \== 'CPU' ->
+    (CurrentPlayer \== 'CPU',CurrentPlayer \== 'CPU1',CurrentPlayer \== 'CPU2' ->
         handle_player_turn(Grid1, Grid2, CurrentPlayer,Player1,Player2, RowMapping, ColMapping, NewGameState);
-        handle_computer_turn(Grid1, Grid2, Player2, RowMapping, ColMapping, NewGameState)).
+        handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, NewGameState)).
 
 % Handles a human player turn
 handle_player_turn(Grid1, Grid2, Player, Player1, Player2, RowMapping, ColMapping, NewGameState) :-
@@ -431,16 +460,16 @@ handle_player_turn(Grid1, Grid2, Player, Player1, Player2, RowMapping, ColMappin
         display_quit_message(Player),
         NewGameState = quit;
         Input = move(Row, Col),
-        (validate_move(Grid1, move(Row, Col)) ->
-            move(game_state(Grid1, Grid2, Player, _, _), move(Row, Col),'X ' ,NewGameState);
+        (move(game_state(Grid1, Grid2, Player,Player1, Player2, RowMapping,ColMapping), move(Row, Col) ,NewGameState);
             write('Invalid move! Try again.'), nl,
             handle_player_turn(Grid1, Grid2, Player, RowMapping, ColMapping, NewGameState))).
 
 % Handles a computer player turn
-handle_computer_turn(Grid1, Grid2, Computer, RowMapping, ColMapping, NewGameState) :-
+handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, NewGameState) :-
     write('Computer is thinking...'), nl,
-    choose_move(Grid1, 1, Move), % Replace 1 with AI level if needed
-    move(game_state(Grid1, Grid2, Computer, _, _), Move,NewGameState),
+    (CurrentPlayer == Player1 -> choose_move(Grid1, 1, Move),write('Used grid1'),nl;choose_move(Grid2, 1, Move),write('Used grid2'),nl),
+     % Replace 1 with AI level if needed
+    move(game_state(Grid1, Grid2, CurrentPlayer,Player1, Player2,RowMapping,ColMapping), Move,NewGameState),
     format('Computer chose move: ~w~n', [Move]).
 
 % Placeholder predicates for required logic (to be implemented):
