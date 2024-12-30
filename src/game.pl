@@ -235,12 +235,14 @@ validate_move(Grid1, move(Row, Col)) :-
     Symbol == '_ '.
     
 % Executes a move if valid and updates the game state.
-move(game_state(Grid1, Grid2, Player1, Player2, RowMapping, ColMapping), move(Row, Col),Symbol ,game_state(NewGrid1, NewGrid2, Player2, Player1, RowMapping, ColMapping)) :-
-    validate_move(Grid1, move(Row, Col)),
-    place_symbol(Symbol,Grid1, Grid2, Row, Col, Player1, RowMapping, ColMapping, NewGrid1, NewGrid2).
+move(game_state(Grid1, Grid2,CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, Col) ,game_state(NewGrid1, NewGrid2, NextPlayer, Player1,Player2, RowMapping, ColMapping)) :-
+    (CurrentPlayer == Player1 -> NextPlayer = Player2,
+    place_symbol('X ',Grid1, Grid2, Row, Col,  RowMapping, ColMapping, NewGrid1, NewGrid2);
+     NextPlayer = Player1,
+    place_symbol('O ',Grid1, Grid2, Row, Col,  RowMapping, ColMapping, NewGrid1, NewGrid2)).
 
 % Places a symbol on both grids according to the mappings.
-place_symbol(Symbol,Grid1, Grid2, Row, Col, Symbol, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
+place_symbol(Symbol,Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
     translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
     update_grid(Grid1, Row, Col, Symbol, NewGrid1),
     update_grid(Grid2, TranslatedRow, TranslatedCol, Symbol, NewGrid2).
@@ -254,9 +256,9 @@ update_grid(Grid, Row, Col, Symbol, NewGrid) :-
     nth1(Row, NewGrid, NewRow, TempGrid).
 
 % Translates coordinates for the second grid.
-translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol) :-
-    nth1(Row, RowMapping, TranslatedRow),
-    nth1(Col, ColMapping, TranslatedCol).
+translate_coordinates(Row, Col, RowMapping, ColMapping, NewRow, NewCol) :-
+    nth1(Row, RowMapping, NewRow),
+    nth1(Col, ColMapping, NewCol).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Logic
@@ -417,32 +419,28 @@ announce_winner(Winner) :-
 % Handles current player turn
 current_player_turn(GameState, NewGameState) :-
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping),
-    (CurrentPlayer = Player1 ->
-        handle_player_turn(Grid1, Grid2, CurrentPlayer, RowMapping, ColMapping, NewGameState);
+    (CurrentPlayer \== 'CPU' ->
+        handle_player_turn(Grid1, Grid2, CurrentPlayer,Player1,Player2, RowMapping, ColMapping, NewGameState);
         handle_computer_turn(Grid1, Grid2, Player2, RowMapping, ColMapping, NewGameState)).
 
 % Handles a human player turn
-handle_player_turn(Grid1, Grid2, Player, RowMapping, ColMapping, NewGameState) :-
-    format('~w, it\'s your turn! Enter your move (move(Row, Col)) or type "quit" to exit: ', [Player]),
+handle_player_turn(Grid1, Grid2, Player, Player1, Player2, RowMapping, ColMapping, NewGameState) :-
+    format('~w, it\'s your turn! Enter your move (Row, Col) or type "quit" to exit: ', [Player]),
     catch(read(Input), _, fail),
     (   Input = quit ->
         display_quit_message(Player),
         NewGameState = quit;
-        Input = move(Row, Col) ->
-        (   validate_move(Grid1, move(Row, Col)) ->
-            move(game_state(Grid1, Grid2, Player, _, _), move(Row, Col), 'X ', NewGameState);   
+        Input = move(Row, Col),
+        (validate_move(Grid1, move(Row, Col)) ->
+            move(game_state(Grid1, Grid2, Player, _, _), move(Row, Col),'X ' ,NewGameState);
             write('Invalid move! Try again.'), nl,
-            handle_player_turn(Grid1, Grid2, Player, RowMapping, ColMapping, NewGameState)
-        );   
-        write('Invalid input! Please enter "quit" or "move(Row, Col)".'), nl,
-        handle_player_turn(Grid1, Grid2, Player, RowMapping, ColMapping, NewGameState)
-    ).
+            handle_player_turn(Grid1, Grid2, Player, RowMapping, ColMapping, NewGameState))).
 
 % Handles a computer player turn
 handle_computer_turn(Grid1, Grid2, Computer, RowMapping, ColMapping, NewGameState) :-
     write('Computer is thinking...'), nl,
     choose_move(Grid1, 1, Move), % Replace 1 with AI level if needed
-    move(game_state(Grid1, Grid2, Computer, _, _), Move,'X_' ,NewGameState),
+    move(game_state(Grid1, Grid2, Computer, _, _), Move,NewGameState),
     format('Computer chose move: ~w~n', [Move]).
 
 % Placeholder predicates for required logic (to be implemented):
