@@ -213,16 +213,23 @@ generate_column_label(Index, Label) :-
         atom_codes(Label, [First, Second])
     ).
 
-% Print both grids side by side with randomized row numbers for Player 2
-print_side_by_side([], [], [], []).
-print_side_by_side([Row1|Rest1], [Row2|Rest2], [Player1RowNum|RestPlayer1Rows], [Player2RowNum|RestPlayer2Rows]) :-
-    format('~d ', [Player1RowNum]),  % Print Player 1 row number
+% Print both grids side by side with proper row numbers
+print_side_by_side(Grid1, Grid2, RowMapping1, RowMapping2) :-
+    length(Grid1, Size),
+    numlist(1, Size, Player1RowNumbers),  % Generate sequential row numbers for Player 1
+    print_side_by_side_rows(Grid1, Grid2, Player1RowNumbers, RowMapping2).
+
+% Helper to print rows side by side with correct row numbers
+print_side_by_side_rows([], [], [], []).
+print_side_by_side_rows([Row1|Rest1], [Row2|Rest2], [Player1Row|RestPlayer1Rows], [Player2Row|RestPlayer2Rows]) :-
+    format('~d ', [Player1Row]),  % Correct Player 1 row number
     print_row(Row1),  % Print Player 1 row
     write('    '),  % Space between grids
     print_row(Row2),  % Print Player 2 row
-    format('~d', [Player2RowNum]),  % Print Player 2 row number
+    format(' ~d', [Player2Row]),  % Correct Player 2 row number (mapped)
     nl,
-    print_side_by_side(Rest1, Rest2, RestPlayer1Rows, RestPlayer2Rows).
+    print_side_by_side_rows(Rest1, Rest2, RestPlayer1Rows, RestPlayer2Rows).
+
 
 % Prints a single row
 print_row([]).
