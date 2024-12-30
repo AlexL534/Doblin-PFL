@@ -442,7 +442,7 @@ announce_winner(Winner) :-
 % Handles current player turn
 current_player_turn(GameState, NewGameState) :-
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping),
-    (CurrentPlayer \== 'CPU' ->
+    (CurrentPlayer \== 'CPU',CurrentPlayer \== 'CPU1',CurrentPlayer \== 'CPU2' ->
         handle_player_turn(Grid1, Grid2, CurrentPlayer,Player1,Player2, RowMapping, ColMapping, NewGameState);
         handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, NewGameState)).
 
@@ -460,7 +460,7 @@ handle_player_turn(Grid1, Grid2, Player, Player1, Player2, RowMapping, ColMappin
 % Handles a computer player turn
 handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, NewGameState) :-
     write('Computer is thinking...'), nl,
-    (cuurentPlayer == Player1 -> choose_move(Grid1, 1, Move),write('Used grid1'),nl,!;choose_move(Grid2, 1, Move),write('Used grid2'),nl),
+    (CurrentPlayer == Player1 -> choose_move(Grid1, 1, Move),write('Used grid1'),nl;choose_move(Grid2, 1, Move),write('Used grid2'),nl),
      % Replace 1 with AI level if needed
     move(game_state(Grid1, Grid2, CurrentPlayer,Player1, Player2,RowMapping,ColMapping), Move,NewGameState),
     format('Computer chose move: ~w~n', [Move]).
