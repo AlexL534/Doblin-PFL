@@ -401,12 +401,17 @@ squares_of_four(Grid, Symbol) :-
 % Returns all valid moves for the current game state.
 valid_moves(Grid1, ListOfMoves) :-
     length(Grid1, Size),
-    findall(move(Row, Col), 
+    findall(move(Row, Letter), 
         (   between(1, Size, Row), 
             between(1, Size, Col),
-            validate_move(Grid1, move(Row, Col))
+            validate_move(Grid1, move(Row, Col)),
+            col_to_atom(Col, Letter)
         ), 
         ListOfMoves).
+
+col_to_atom(Col, Letter) :-
+    Letters = [a, b, c, d, e, f, g, h, i],
+    nth1(Col, Letters, Letter).
 
 % Checks if the game is over and determines the winner
 game_over(game_state(Grid1, Grid2, _, _, _, _, _), Winner) :-
@@ -429,6 +434,7 @@ game_over(game_state(Grid1, Grid2, _, _, _, _, _), Winner) :-
 % Evaluates the current game state and returns how bad or good it is for the current player
 value(game_state(Grid1, _, _, _, _, _), Player, Value) :-
     evaluate_board(Grid1, Player, Value).
+
 
 random_move(Grid,Move) :-
         valid_moves(Grid, ListOfMoves),
