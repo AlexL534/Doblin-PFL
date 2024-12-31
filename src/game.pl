@@ -100,7 +100,7 @@ get_ai_level(Level, Label) :-
 initial_state(config(Name1, Name2, _, _, Size), game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping)) :-
     CurrentPlayer = Name1,
     initialize_grids(Size, Grid1, Grid2),
-    generate_mappings(Size, ColMapping, RowMapping).
+    generate_mappings(Size, RowMapping, ColMapping).
 
 % Initializes two grids and their coordinate mappings
 initialize_grids(Size, Grid1, Grid2) :-
@@ -383,14 +383,16 @@ squares_of_four(Grid, Symbol) :-
     nth1(NextCol, Row1, Symbol),
     nth1(NextCol, Row2, Symbol).
 
-all_moves(Grid,Moves) :-
-    length(Grid,Max),
-    findall(move(Row,Col), (between(1,Max,Row),between(1,Max,Col)),Moves).
-    
+ 
 % Returns all valid moves for the current game state.
 valid_moves(Grid1, ListOfMoves) :-
-    all_moves(Grid1,Moves),
-    findall(move(Row, Col), (member(move(Row,Col),Moves),validate_move(Grid1, move(Row, Col))), ListOfMoves).
+    length(Grid1, Size),
+    findall(move(Row, Col), 
+        (   between(1, Size, Row), 
+            between(1, Size, Col),
+            validate_move(Grid1, move(Row, Col))
+        ), 
+        ListOfMoves).
 
 % Checks if the game is over and determines the winner
 game_over(game_state(Grid1, Grid2, _, _, _, _, _), Winner) :-
