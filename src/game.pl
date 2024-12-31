@@ -177,12 +177,12 @@ print_aligned_labels([Label|Rest]) :-
     format('~w  ', [Label]),  % Two spaces after each label
     print_aligned_labels(Rest).
 
-% Generate column label for a given index (supports up to 'ZZ')
+% Generate column label for a given index
 generate_column_label(Index, Label) :-
     Base is 26,
     Quotient is (Index - 1) // Base,
     Remainder is (Index - 1) mod Base,
-    char_code('A', A),
+    char_code('a', A),
     (   Quotient =:= 0
     ->  Code is A + Remainder,
         char_code(Label, Code)
@@ -476,7 +476,7 @@ current_player_turn(GameState, NewGameState) :-
 
 % Handles a human player turn
 handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState) :-
-    format('~w, it\'s your turn! Enter your move (Row, Col) or type "quit" to exit: ', [CurrentPlayer]),
+    format('~w, it\'s your turn! Enter your move (Row,Col) or type "quit" to exit: ', [CurrentPlayer]),
     catch(read(Input), _, fail),
     (   Input = quit ->
         display_quit_message(CurrentPlayer),
