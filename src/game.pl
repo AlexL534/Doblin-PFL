@@ -228,12 +228,11 @@ display_quit_message(Player) :-
 % Move Execution and Validation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% utility predicate to find the index of an element in a list
-index_of([Element|_], Element, 0):- !.
-index_of([_|Tail], Element, Index):-
-  index_of(Tail, Element, Index1),
-  !,
-  Index is Index1+1.
+% Utility to find the index of an element in a list.
+index_of([Element|_], Element, 1).  % The element is found at the first position.
+index_of([_|Tail], Element, Index) :-
+    index_of(Tail, Element, Index1),  % Recursively look for the element
+    Index is Index1 + 1.              % Increment the index as we move through the list
 
 reverseMapping(Mapping, ReverseMapping) :-
     length(Mapping, Size),
@@ -258,22 +257,22 @@ validate_move(Grid1, move(Row, Col)) :-
     Symbol == '_ '.
     
 % Executes a move if valid and updates the game state.
-move(game_state(Grid1, Grid2,CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, Col) ,game_state(NewGrid1, NewGrid2, NextPlayer, Player1,Player2, RowMapping, ColMapping)) :-
+move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, Col), game_state(NewGrid1, NewGrid2, NextPlayer, Player1,Player2, RowMapping, ColMapping)) :-
     (   CurrentPlayer == Player1 ->
-        validate_move(Grid1,move(Row,Col)),
+        validate_move(Grid1, move(Row,Col)),
         NextPlayer = Player2,
-        place_symbol('X ',Grid1, Grid2, Row, Col,  RowMapping, ColMapping, NewGrid1, NewGrid2);
+        place_symbol('X ', Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2);
         validate_move(Grid2,move(Row,Col)),
         NextPlayer = Player1,
         reverseMapping(RowMapping,ReverseRowMapping),
         reverseMapping(ColMapping,ReverseColMapping),
-        place_symbol('O ',Grid2, Grid1, Row, Col,  ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1)
+        place_symbol('O ', Grid2, Grid1, Row, Col,  ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1)
     ).
 
 % Places a symbol on both grids according to the mappings.
-place_symbol(Symbol,Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
-    translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
+place_symbol(Symbol, Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
     update_grid(Grid1, Row, Col, Symbol, NewGrid1),
+    translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
     update_grid(Grid2, TranslatedRow, TranslatedCol, Symbol, NewGrid2).
 
 % Updates a specific cell in a grid.
@@ -284,10 +283,13 @@ update_grid(Grid, Row, Col, Symbol, NewGrid) :-
     nth1(Row, Grid, _, TempGrid),
     nth1(Row, NewGrid, NewRow, TempGrid).
 
+
 % Translates coordinates for the second grid.
 translate_coordinates(Row, Col, RowMapping, ColMapping, NewRow, NewCol) :-
-    nth1(Row, RowMapping, NewRow),
-    nth1(Col, ColMapping, NewCol).
+    index_of(RowMapping, Row, NewRowIndex), 
+    index_of(ColMapping, Col, NewColIndex), 
+    NewRow is NewRowIndex,                  
+    NewCol is NewColIndex.                  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Logic
@@ -417,8 +419,8 @@ value(game_state(Grid1, _, _, _, _, _), Player, Value) :-
     evaluate_board(Grid1, Player, Value).
 
 random_move(Grid,Move) :-
-        valid_moves(Grid,ListOfMoves),
-        random_member(Move,ListOfMoves).
+        valid_moves(Grid, ListOfMoves),
+        random_member(Move, ListOfMoves).
         
 % Chooses a move for the computer player based on difficulty level (level 1 should return a random valid move and level 2 the best play with a greedy algorithm)
 choose_move(Grid, Level, Move) :-
@@ -480,7 +482,7 @@ handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, Co
     (CurrentPlayer == Player1 -> choose_move(Grid1, 1, Move),write('Used grid1'),nl;
      choose_move(Grid2, 1, Move),write('Used grid2'),nl),
      % Replace 1 with AI level if needed
-    move(game_state(Grid1, Grid2, CurrentPlayer,Player1, Player2,RowMapping,ColMapping), Move,NewGameState),
+    move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), Move, NewGameState),
     format('Computer chose move: ~w~n', [Move]).
 
 % Placeholder predicates for required logic (to be implemented):
