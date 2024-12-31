@@ -227,10 +227,9 @@ display_quit_message(Player) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Move Execution and Validation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 % Utility to find the index of an element in a list.
 index_of([Element|_], Element, 1).  % The element is found at the first position.
-index_of([_|Tail], Element, Index) :-
+index_of([_|Tail], Element, Index) :- 
     index_of(Tail, Element, Index1),  % Recursively look for the element
     Index is Index1 + 1.              % Increment the index as we move through the list
 
@@ -246,27 +245,30 @@ reverseMappingAux([Elem|Tail], Index, CurrentReverseMapping, ReverseMapping) :-
     NextIndex is Index + 1,
     reverseMappingAux(Tail, NextIndex, UpdatedReverseMapping, ReverseMapping).
 
-
-% checks if a position in within bounds and does not already have a piece
+% checks if a position is within bounds and does not already have a piece
 validate_move(Grid1, move(Row, Col)) :-
-    length(Grid1,Max),
-    Row >=1, Row =< Max,
-    Col >=1, Col =< Max,
-    nth1(Row,Grid1,TargetRow),
-    nth1(Col,TargetRow,Symbol),
+    length(Grid1, Max),
+    Row >= 1, Row =< Max,
+    Col >= 1, Col =< Max,
+    nth1(Row, Grid1, TargetRow),
+    nth1(Col, TargetRow, Symbol),
     Symbol == '_ '.
-    
+
 % Executes a move if valid and updates the game state.
-move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, Col), game_state(NewGrid1, NewGrid2, NextPlayer, Player1,Player2, RowMapping, ColMapping)) :-
+move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, ColLetter), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping)) :-
+    write('Current Player: '), write(CurrentPlayer), nl,
+    atom(ColLetter),
+    letter_to_index(ColLetter, Col),
     (   CurrentPlayer == Player1 ->
-        validate_move(Grid1, move(Row,Col)),
-        NextPlayer = Player2,
-        place_symbol('X ', Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2);
-        validate_move(Grid2,move(Row,Col)),
+            validate_move(Grid1, move(Row, Col)),
+            NextPlayer = Player2,
+            place_symbol('X ', Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2);
+        
+        validate_move(Grid2, move(Row, Col)),
         NextPlayer = Player1,
-        reverseMapping(RowMapping,ReverseRowMapping),
-        reverseMapping(ColMapping,ReverseColMapping),
-        place_symbol('O ', Grid2, Grid1, Row, Col,  ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1)
+        reverseMapping(RowMapping, ReverseRowMapping),
+        reverseMapping(ColMapping, ReverseColMapping),
+        place_symbol('O ', Grid2, Grid1, Row, Col, ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1)
     ).
 
 % Places a symbol on both grids according to the mappings.
@@ -283,13 +285,23 @@ update_grid(Grid, Row, Col, Symbol, NewGrid) :-
     nth1(Row, Grid, _, TempGrid),
     nth1(Row, NewGrid, NewRow, TempGrid).
 
-
 % Translates coordinates for the second grid.
 translate_coordinates(Row, Col, RowMapping, ColMapping, NewRow, NewCol) :-
     index_of(RowMapping, Row, NewRowIndex), 
     index_of(ColMapping, Col, NewColIndex), 
     NewRow is NewRowIndex,                  
     NewCol is NewColIndex.                  
+
+% Map lettered columns to numeric columns
+letter_to_index(a, 1).
+letter_to_index(b, 2).
+letter_to_index(c, 3).
+letter_to_index(d, 4).
+letter_to_index(e, 5).
+letter_to_index(f, 6).
+letter_to_index(g, 7).
+letter_to_index(h, 8).
+letter_to_index(i, 9).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Logic
