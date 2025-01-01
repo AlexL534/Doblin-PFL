@@ -2,7 +2,6 @@
 
 :- use_module(library(lists)).
 :- use_module(library(random)).
-:- use_module(library(random_between)).
 :- use_module(library(between)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -101,7 +100,7 @@ get_ai_level(Level, Label) :-
 initial_state(config(Name1, Name2, _, _, Size), game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping)) :-
     CurrentPlayer = Name1,
     initialize_grids(Size, Grid1, Grid2),
-    generate_mappings(Size, ColMapping, RowMapping).
+    generate_mappings(Size, RowMapping, ColMapping).
 
 % Initializes two grids and their coordinate mappings
 initialize_grids(Size, Grid1, Grid2) :-
@@ -178,12 +177,12 @@ print_aligned_labels([Label|Rest]) :-
     format('~w  ', [Label]),  % Two spaces after each label
     print_aligned_labels(Rest).
 
-% Generate column label for a given index (supports up to 'ZZ')
+% Generate column label for a given index
 generate_column_label(Index, Label) :-
     Base is 26,
     Quotient is (Index - 1) // Base,
     Remainder is (Index - 1) mod Base,
-    char_code('A', A),
+    char_code('a', A),
     (   Quotient =:= 0
     ->  Code is A + Remainder,
         char_code(Label, Code)
@@ -228,8 +227,11 @@ display_quit_message(Player) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Move Execution and Validation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
+% Utility to find the index of an element in a list.
+index_of([Element|_], Element, 1).  % The element is found at the first position.
+index_of([_|Tail], Element, Index) :- 
+    index_of(Tail, Element, Index1),  % Recursively look for the element
+    Index is Index1 + 1.              % Increment the index as we move through the list
 
 reverseMapping(Mapping, ReverseMapping) :-
     length(Mapping, Size),
@@ -243,32 +245,36 @@ reverseMappingAux([Elem|Tail], Index, CurrentReverseMapping, ReverseMapping) :-
     NextIndex is Index + 1,
     reverseMappingAux(Tail, NextIndex, UpdatedReverseMapping, ReverseMapping).
 
-
-% checks if a position in within bounds and does not already have a piece
+% checks if a position is within bounds and does not already have a piece
 validate_move(Grid1, move(Row, Col)) :-
-    length(Grid1,Max),
-    Row >=1, Row =< Max,
-    Col >=1, Col =< Max,
-    nth1(Row,Grid1,TargetRow),
-    nth1(Col,TargetRow,Symbol),
+    length(Grid1, Max),
+    Row >= 1, Row =< Max,
+    Col >= 1, Col =< Max,
+    nth1(Row, Grid1, TargetRow),
+    nth1(Col, TargetRow, Symbol),
     Symbol == '_ '.
-    
+
 % Executes a move if valid and updates the game state.
-move(game_state(Grid1, Grid2,CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, Col) ,game_state(NewGrid1, NewGrid2, NextPlayer, Player1,Player2, RowMapping, ColMapping)) :-
-    (CurrentPlayer == Player1 ->
-     validate_move(Grid1,move(Row,Col)),
-     NextPlayer = Player2,
-    place_symbol('X ',Grid1, Grid2, Row, Col,  RowMapping, ColMapping, NewGrid1, NewGrid2);
-     validate_move(Grid2,move(Row,Col)),
-     NextPlayer = Player1,
-     reverseMapping(RowMapping,ReverseRowMapping),
-     reverseMapping(ColMapping,ReverseColMapping),
-    place_symbol('O ',Grid2, Grid1, Row, Col,  ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1)).
+move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, ColLetter), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping)) :-
+    write('Current Player: '), write(CurrentPlayer), nl,
+    atom(ColLetter),
+    letter_to_index(ColLetter, Col),
+    (   CurrentPlayer == Player1 ->
+            validate_move(Grid1, move(Row, Col)),
+            NextPlayer = Player2,
+            place_symbol('X ', Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2);
+        
+        validate_move(Grid2, move(Row, Col)),
+        NextPlayer = Player1,
+        reverseMapping(RowMapping, ReverseRowMapping),
+        reverseMapping(ColMapping, ReverseColMapping),
+        place_symbol('O ', Grid2, Grid1, Row, Col, ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1)
+    ).
 
 % Places a symbol on both grids according to the mappings.
-place_symbol(Symbol,Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
-    translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
+place_symbol(Symbol, Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
     update_grid(Grid1, Row, Col, Symbol, NewGrid1),
+    translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
     update_grid(Grid2, TranslatedRow, TranslatedCol, Symbol, NewGrid2).
 
 % Updates a specific cell in a grid.
@@ -281,14 +287,27 @@ update_grid(Grid, Row, Col, Symbol, NewGrid) :-
 
 % Translates coordinates for the second grid.
 translate_coordinates(Row, Col, RowMapping, ColMapping, NewRow, NewCol) :-
-    nth1(Row, RowMapping, NewRow),
-    nth1(Col, ColMapping, NewCol).
+    index_of(RowMapping, Row, NewRowIndex), 
+    index_of(ColMapping, Col, NewColIndex), 
+    NewRow is NewRowIndex,                  
+    NewCol is NewColIndex.                  
+
+% Map lettered columns to numeric columns
+letter_to_index(a, 1).
+letter_to_index(b, 2).
+letter_to_index(c, 3).
+letter_to_index(d, 4).
+letter_to_index(e, 5).
+letter_to_index(f, 6).
+letter_to_index(g, 7).
+letter_to_index(h, 8).
+letter_to_index(i, 9).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Logic
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Counts the points for a player in their respective grid
+% Counts how many lines of 4 or squares a player has in their own grid
 calculate_points(Grid, Player, Points) :-
     (Player = player1 -> Symbol = 'X'; Symbol = 'O'),
     findall(_, horizontal_lines(Grid, Symbol), Horizontal),
@@ -301,26 +320,38 @@ calculate_points(Grid, Player, Points) :-
     length(Squares, SquareCount),
     Points is HorizontalCount + VerticalCount + DiagonalCount + SquareCount.
 
-% Finds all horizontal lines of length 4
+% Finds all horizontal lines of length 4 of a certain symbol
 horizontal_lines(Grid, Symbol) :-
     member(Row, Grid),
-    sublist([Symbol, Symbol, Symbol, Symbol], Row).
+    length(Row, Length),
+    MaxStart is Length - 3,
+    between(1, MaxStart, Start),
+    sublist_from(Row, Start, [Symbol, Symbol, Symbol, Symbol]).
 
-% Finds all vertical lines of length 4
+% Finds all vertical lines of length 4 of a certain symbol
 vertical_lines(Grid, Symbol) :-
     transpose(Grid, TransposedGrid),
     horizontal_lines(TransposedGrid, Symbol).
 
-% Finds all diagonal lines (\ and /) of length 4
+% Finds all diagonal lines (\ and /) of length 4 of a certain symbol
 diagonal_lines(Grid, Symbol) :-
     diagonals(Grid, Diagonals),
     member(Diagonal, Diagonals),
-    sublist([Symbol, Symbol, Symbol, Symbol], Diagonal).
+    sublist_from(Diagonal, 1, [Symbol, Symbol, Symbol, Symbol]).
+
+% Helper to extract a sublist starting from a given index
+sublist_from(List, Start, Sublist) :-
+    length(Prefix, Start),
+    append(Prefix, Rest, List),
+    length(Sublist, 4),
+    prefix(Sublist, Rest).
 
 % Extracts all diagonals (\ and /) from a grid
 diagonals(Grid, Diagonals) :-
     length(Grid, Size),
-    findall(Diagonal, extract_diagonal(Grid, Size, Diagonal), Diagonals).
+    findall(Diagonal, extract_diagonal(Grid, Size, Diagonal), Diagonals1),
+    findall(Diagonal, extract_reverse_diagonal(Grid, Size, Diagonal), Diagonals2),
+    append(Diagonals1, Diagonals2, Diagonals).
 
 % Extracts a single diagonal from the grid
 extract_diagonal(Grid, Size, Diagonal) :-
@@ -329,7 +360,19 @@ extract_diagonal(Grid, Size, Diagonal) :-
     between(MinOffset, MaxOffset, Offset), 
     findall(Cell, (
         between(1, Size, Row),
-        Col is Row + Offset,
+        Col is Row + Offset,   % For '\ ' direction
+        within_bounds(Col, Size),
+        nth1(Row, Grid, GridRow),
+        nth1(Col, GridRow, Cell)
+    ), Diagonal).
+
+extract_reverse_diagonal(Grid, Size, Diagonal) :-
+    MaxOffset is Size - 1,
+    MinOffset is -(MaxOffset),
+    between(MinOffset, MaxOffset, Offset),
+    findall(Cell, (
+        between(1, Size, Row),
+        Col is Row - Offset,  % For '/' direction
         within_bounds(Col, Size),
         nth1(Row, Grid, GridRow),
         nth1(Col, GridRow, Cell)
@@ -354,31 +397,37 @@ squares_of_four(Grid, Symbol) :-
     nth1(NextCol, Row1, Symbol),
     nth1(NextCol, Row2, Symbol).
 
-% Sublist helper to match consecutive symbols
-sublist(Sub, List) :-
-    append(_, Rest, List),
-    append(Sub, _, Rest).
-
-all_moves(Grid,Moves) :-
-    length(Grid,Max),
-    findall(move(Row,Col), (between(1,Max,Row),between(1,Max,Col)),Moves).
-    
+ 
 % Returns all valid moves for the current game state.
 valid_moves(Grid1, ListOfMoves) :-
-    all_moves(Grid1,Moves),
-    findall(move(Row, Col), (member(move(Row,Col),Moves),validate_move(Grid1, move(Row, Col))), ListOfMoves).
+    length(Grid1, Size),
+    findall(move(Row, Letter), 
+        (   between(1, Size, Row), 
+            between(1, Size, Col),
+            validate_move(Grid1, move(Row, Col)),
+            col_to_atom(Col, Letter)
+        ), 
+        ListOfMoves).
+
+col_to_atom(Col, Letter) :-
+    Letters = [a, b, c, d, e, f, g, h, i],
+    nth1(Col, Letters, Letter).
 
 % Checks if the game is over and determines the winner
-game_over(game_state(Grid1, Grid2, _, _, _, _,_), Winner) :-
+game_over(game_state(Grid1, Grid2, _, _, _, _, _), Winner) :-
     valid_moves(Grid1,Moves1),
     valid_moves(Grid2,Moves2),
     length(Moves1,Lmoves1),
     length(Moves2,Lmoves2),
-     % No valid moves left for both players
+    % No valid moves left for both players
     (   Lmoves1 == 0, Lmoves2 == 0 -> 
         calculate_points(Grid1, player1, Points1),
         calculate_points(Grid2, player2, Points2),
-        (Points1 == Points2 -> Winner = draw; (Points1 < Points2 -> Winner = player2; Winner = player1));
+        (   Points1 == Points2 -> Winner = draw;
+            (   Points1 < Points2 -> Winner = player1;
+                Winner = player2
+            )
+        );
         fail
     ).
 
@@ -386,9 +435,10 @@ game_over(game_state(Grid1, Grid2, _, _, _, _,_), Winner) :-
 value(game_state(Grid1, _, _, _, _, _), Player, Value) :-
     evaluate_board(Grid1, Player, Value).
 
+
 random_move(Grid,Move) :-
-        valid_moves(Grid,ListOfMoves),
-        random_member(Move,ListOfMoves).
+        valid_moves(Grid, ListOfMoves),
+        random_member(Move, ListOfMoves).
         
 % Chooses a move for the computer player based on difficulty level (level 1 should return a random valid move and level 2 the best play with a greedy algorithm)
 choose_move(Grid, Level, Move) :-
@@ -402,13 +452,21 @@ choose_move(Grid, Level, Move) :-
 % Runs the game loop, alternating turns between players
 game_loop(GameState) :-
     display_game(GameState),
+<<<<<<< HEAD
     (game_over(GameState, Winner) ->
         write('game finnished'),nl,
         announce_winner(Winner),!;
+=======
+    write('game_loop'), nl,
+    (   game_over(GameState, Winner) ->
+        write('game finished'), nl,
+        announce_winner(Winner), !;
+>>>>>>> d6873f059f3faf3aff006ad5d0eae5787c04eb2a
         current_player_turn(GameState, NewGameState),
-        (NewGameState = quit ->
+        (   NewGameState = quit ->
             write('Game exited by the player. Goodbye!'), nl;
-        game_loop(NewGameState))
+            game_loop(NewGameState)
+        )
     ).
 
 announce_winner(Winner) :-
@@ -424,21 +482,23 @@ announce_winner(Winner) :-
 % Handles current player turn
 current_player_turn(GameState, NewGameState) :-
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping),
-    (CurrentPlayer \== 'CPU',CurrentPlayer \== 'CPU1',CurrentPlayer \== 'CPU2' ->
+    (CurrentPlayer \== 'CPU', CurrentPlayer \== 'CPU1', CurrentPlayer \== 'CPU2' ->
         handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState);
-        handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, NewGameState)).
+        handle_computer_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState)).
 
 % Handles a human player turn
 handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState) :-
-    format('~w, it\'s your turn! Enter your move (Row, Col) or type "quit" to exit: ', [Player]),
+    format('~w, it\'s your turn! Enter your move (Row,Col) or type "quit" to exit: ', [CurrentPlayer]),
     catch(read(Input), _, fail),
     (   Input = quit ->
-        display_quit_message(Player),
+        display_quit_message(CurrentPlayer),
         NewGameState = quit;
-        Input = move(Row, Col),
-        (move(game_state(Grid1, Grid2, Player,Player1, Player2, RowMapping,ColMapping), move(Row, Col) ,NewGameState);
+        (   Input = move(Row, Col),
+            (move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, Col), NewGameState) -> true;
             write('Invalid move! Try again.'), nl,
-            handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState))).
+            handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState))
+        )
+    ).
 
 % Handles a computer player turn
 handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, NewGameState) :-
@@ -446,7 +506,7 @@ handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, Co
     (CurrentPlayer == Player1 -> choose_move(Grid1, 1, Move),write('Used grid1'),nl;
      choose_move(Grid2, 1, Move),write('Used grid2'),nl),
      % Replace 1 with AI level if needed
-    move(game_state(Grid1, Grid2, CurrentPlayer,Player1, Player2,RowMapping,ColMapping), Move,NewGameState),
+    move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), Move, NewGameState),
     format('Computer chose move: ~w~n', [Move]).
 
 % Placeholder predicates for required logic (to be implemented):
