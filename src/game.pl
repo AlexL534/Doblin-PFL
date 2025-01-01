@@ -201,8 +201,11 @@ print_side_by_side(Grid1, Grid2, RowMapping) :-
 
 % Helper to print rows side by side with correct row numbers
 print_side_by_side_rows([], [], [], []).
-print_side_by_side_rows([Row1|Rest1], [Row2|Rest2], [Player1Row|RestPlayer1Rows], [Player2Row|RestPlayer2Rows]) :-
-    format('~d ', [Player1Row]),  % Correct Player 1 row number
+print_side_by_side_rows([Row1|Rest1], [Row2|Rest2], Player1RowNumbers, [Player2Row|RestPlayer2Rows]) :-
+    last(Player1RowNumbers,Player1Last),
+    length(Player1RowNumbers,SizeP1),
+    nth1(SizeP1,Player1RowNumbers,_,RestPlayer1Rows),
+    format('~d ', [Player1Last]),  % Correct Player 1 row number
     print_row(Row1),  % Print Player 1 row
     write('    '),  % Space between grids
     print_row(Row2),  % Print Player 2 row
@@ -262,20 +265,30 @@ move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMa
     (   CurrentPlayer == Player1 ->
             validate_move(Grid1, move(Row, Col)),
             NextPlayer = Player2,
-            place_symbol('X ', Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2);
+            place_symbol_player1('X ', Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2);
         
         validate_move(Grid2, move(Row, Col)),
         NextPlayer = Player1,
         reverseMapping(RowMapping, ReverseRowMapping),
         reverseMapping(ColMapping, ReverseColMapping),
-        place_symbol('O ', Grid2, Grid1, Row, Col, ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1)
+        place_symbol_player2('O ', Grid2, Grid1, Row, Col, ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1)
     ).
 
 % Places a symbol on both grids according to the mappings.
-place_symbol(Symbol, Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
-    update_grid(Grid1, Row, Col, Symbol, NewGrid1),
+
+place_symbol_player1(Symbol, Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
+    length(Grid1,Size),
+    NewRow is Size +1 -Row,
+    update_grid(Grid1, NewRow, Col, Symbol, NewGrid1),
     translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
     update_grid(Grid2, TranslatedRow, TranslatedCol, Symbol, NewGrid2).
+
+place_symbol_player2(Symbol, Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
+    update_grid(Grid1, Row, Col, Symbol, NewGrid1),
+    translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
+    length(Grid2,Size),
+    NewRow is Size +1 -TranslatedRow,
+    update_grid(Grid2, NewRow, TranslatedCol, Symbol, NewGrid2).
 
 % Updates a specific cell in a grid.
 update_grid(Grid, Row, Col, Symbol, NewGrid) :-
@@ -452,16 +465,9 @@ choose_move(Grid, Level, Move) :-
 % Runs the game loop, alternating turns between players
 game_loop(GameState) :-
     display_game(GameState),
-<<<<<<< HEAD
     (game_over(GameState, Winner) ->
         write('game finnished'),nl,
         announce_winner(Winner),!;
-=======
-    write('game_loop'), nl,
-    (   game_over(GameState, Winner) ->
-        write('game finished'), nl,
-        announce_winner(Winner), !;
->>>>>>> d6873f059f3faf3aff006ad5d0eae5787c04eb2a
         current_player_turn(GameState, NewGameState),
         (   NewGameState = quit ->
             write('Game exited by the player. Goodbye!'), nl;
