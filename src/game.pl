@@ -18,12 +18,13 @@ main_menu :-
     get_grid_size(Size),
     write('1. Human vs Human'), nl,
     write('2. Human vs Computer'), nl,
-    write('3. Computer vs Computer'), nl,
-    write('4. Quit'), nl,
+    write('3. Computer vs Human'), nl,
+    write('4. Computer vs Computer'), nl,
+    write('5. Quit'), nl,
     write('Choose an option: '), nl,
     catch(read(Choice), error(syntax_error(_), _), fail),
-    (   integer(Choice), member(Choice, [1, 2, 3, 4])
-    ->  (   Choice = 4
+    (   integer(Choice), member(Choice, [1, 2, 3, 4, 5])
+    ->  (   Choice = 5
         ->  write('Goodbye!'), nl;   
             configure_game(Choice, Size, GameConfig),
             initial_state(GameConfig, InitialState),
@@ -65,7 +66,12 @@ configure_game(2, Size, config(Name1, 'CPU', Level, _, Size)) :-
     get_player_name('Your', Name1),
     get_ai_level(Level,'CPU').
 
-configure_game(3, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
+configure_game(3, Size, config('CPU', Name, Level, _, Size)) :- 
+    write('Computer vs Human selected.'), nl,
+    get_ai_level(Level, 'CPU'),
+    get_player_name('Your', Name).
+
+configure_game(4, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
     write('Computer vs Computer selected.'), nl,
     get_ai_level(Level1, 'CPU1'),
     get_ai_level(Level2, 'CPU2').
