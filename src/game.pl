@@ -75,24 +75,24 @@ valid_name(Name) :-
     atom_length(Name, Length),
     Length =< 16. 
 
-% configure_game(+Mode, +Size, -Config) :- 
+% configure_game(+Mode, +Size, -GameConfig) :- 
 % Configures the game based on selected mode
-configure_game(1, Size, config(Name1, Name2, _, _, Size)) :- 
+configure_game(1, Size, GameConfig(Name1, Name2, _, _, Size)) :- 
     write('Human vs Human selected.'), nl,
     get_player_name('Player 1', Name1),
     get_player_name('Player 2', Name2).
 
-configure_game(2, Size, config(Name1, 'CPU', Level, _, Size)) :- 
+configure_game(2, Size, GameConfig(Name1, 'CPU', Level, _, Size)) :- 
     write('Human vs Computer selected.'), nl,
     get_player_name('Your', Name1),
     get_ai_level('CPU', Level).
 
-configure_game(3, Size, config('CPU', Name, Level, _, Size)) :- 
+configure_game(3, Size, GameConfig('CPU', Name, Level, _, Size)) :- 
     write('Computer vs Human selected.'), nl,
     get_ai_level('CPU', Level),
     get_player_name('Your', Name).
 
-configure_game(4, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
+configure_game(4, Size, GameConfig('CPU1', 'CPU2', Level1, Level2, Size)) :-
     write('Computer vs Computer selected.'), nl,
     get_ai_level('CPU1', Level1),
     get_ai_level('CPU2', Level2).
@@ -123,8 +123,9 @@ validate_difficulty(CPUName, _, _) :-
 % Game State Initialization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% initial_state(+GameConfig, +GameState) :-
 % Initializes the game state based on the configuration
-initial_state(config(Name1, Name2, _, _, Size), game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping)) :-
+initial_state(GameConfig(Name1, Name2, _, _, Size), GameState(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping)) :-
     CurrentPlayer = Name1,
     initialize_grids(Size, Grid1, Grid2),
     generate_mappings(Size, RowMapping, ColMapping).
@@ -155,7 +156,7 @@ generate_mappings(Size, RowMapping, ColMapping) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Display the current game state
-display_game(game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping)) :-
+display_game(GameState(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping)) :-
     length(Grid1, Size),
     write('Grids:'), nl,
     Width is Size * 3 - 2,
@@ -294,7 +295,7 @@ validate_move(Grid1, move(Row, Col)) :-
     Symbol == '_ '.
 
 % Executes a move if valid and updates the game state.
-move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, ColLetter), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping)) :-
+move(GameState(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, ColLetter), GameState(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping)) :-
     write('Current Player: '), write(CurrentPlayer), nl,
     atom(ColLetter),
     letter_to_index(ColLetter, Col),
@@ -465,7 +466,7 @@ col_to_atom(Col, Letter) :-
     nth1(Col, Letters, Letter).
 
 % Checks if the game is over and determines the winner
-game_over(game_state(Grid1, Grid2, _, _, _, _, _), Winner) :-
+game_over(GameState(Grid1, Grid2, _, _, _, _, _), Winner) :-
     valid_moves(Grid1,Moves1),
     valid_moves(Grid2,Moves2),
     length(Moves1,Lmoves1),
@@ -483,7 +484,7 @@ game_over(game_state(Grid1, Grid2, _, _, _, _, _), Winner) :-
     ).
 
 % Evaluates the current game state and returns how bad or good it is for the current player
-value(game_state(Grid1, _, _, _, _, _), Player, Value) :-
+value(GameState(Grid1, _, _, _, _, _), Player, Value) :-
     evaluate_board(Grid1, Player, Value).
 
 
@@ -525,7 +526,7 @@ announce_winner(Winner) :-
 
 % Handles current player turn
 current_player_turn(GameState, NewGameState) :-
-    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping),
+    GameState = GameState(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping),
     (CurrentPlayer \== 'CPU', CurrentPlayer \== 'CPU1', CurrentPlayer \== 'CPU2' ->
         handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState);
         handle_computer_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState)).
@@ -538,7 +539,7 @@ handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, Co
         display_quit_message(CurrentPlayer),
         NewGameState = quit;
         (   Input = move(Row, Col),
-            (move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, Col), NewGameState) -> true;
+            (move(GameState(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, Col), NewGameState) -> true;
             write('Invalid move! Try again.'), nl,
             handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState))
         )
@@ -550,7 +551,7 @@ handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, Co
     (CurrentPlayer == Player1 -> choose_move(Grid1, 1, Move),write('Used grid1'),nl;
      choose_move(Grid2, 1, Move),write('Used grid2'),nl),
      % Replace 1 with AI level if needed
-    move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), Move, NewGameState),
+    move(GameState(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), Move, NewGameState),
     format('Computer chose move: ~w~n', [Move]).
 
 % Placeholder predicates for required logic (to be implemented):
