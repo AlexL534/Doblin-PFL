@@ -406,8 +406,6 @@ extract_reverse_diagonal(Grid, Size, Diagonal) :-
 within_bounds(Value, Max) :-
     Value >= 1, Value =< Max.
 
-    Value >= 1, Value =< Max.
-
 % Finds all 2x2 squares of the same symbol
 squares_of_four(Grid, Symbol) :-
     length(Grid, Size),
