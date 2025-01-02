@@ -271,7 +271,7 @@ move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMa
         NextPlayer = Player1,
         reverseMapping(RowMapping, ReverseRowMapping),
         reverseMapping(ColMapping, ReverseColMapping),
-        place_symbol_player2('O ', Grid2, Grid1, Row, Col, ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1)
+        place_symbol_player2('O ', Grid2, Grid1, Row, Col, ReverseRowMapping, ReverseColMapping,RowMapping,ColMapping, NewGrid2, NewGrid1)
     ).
 
 % Places a symbol on both grids according to the mappings.
@@ -283,10 +283,12 @@ place_symbol_player1(Symbol, Grid1, Grid2, Row, Col, RowMapping, ColMapping, New
     translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
     update_grid(Grid2, TranslatedRow, TranslatedCol, Symbol, NewGrid2).
 
-place_symbol_player2(Symbol, Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
-    update_grid(Grid1, Row, Col, Symbol, NewGrid1),
-    translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
+place_symbol_player2(Symbol, Grid1, Grid2, Row, Col, RowMappingForGrid2, ColMappingForGrid2, RowMappingForGrid1, ColMappingForGrid1, NewGrid1, NewGrid2) :-
     length(Grid2,Size),
+    index_of(RowMappingForGrid1,Row,TR),
+    index_of(ColMappingForGrid1,Col,TC),
+    update_grid(Grid1, TR, TC, Symbol, NewGrid1),
+    translate_coordinates(TR, TC, RowMappingForGrid2, ColMappingForGrid2, TranslatedRow, TranslatedCol),
     NewRow is Size +1 -TranslatedRow,
     update_grid(Grid2, NewRow, TranslatedCol, Symbol, NewGrid2).
 
