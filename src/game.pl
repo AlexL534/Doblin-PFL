@@ -85,17 +85,17 @@ configure_game(1, Size, config(Name1, Name2, _, _, Size)) :-
 configure_game(2, Size, config(Name1, 'CPU', Level, _, Size)) :- 
     write('Human vs Computer selected.'), nl,
     get_player_name('Your', Name1),
-    get_ai_level(Level,'CPU').
+    get_ai_level('CPU', Level).
 
 configure_game(3, Size, config('CPU', Name, Level, _, Size)) :- 
     write('Computer vs Human selected.'), nl,
-    get_ai_level(Level, 'CPU'),
+    get_ai_level('CPU', Level),
     get_player_name('Your', Name).
 
 configure_game(4, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
     write('Computer vs Computer selected.'), nl,
-    get_ai_level(Level1, 'CPU1'),
-    get_ai_level(Level2, 'CPU2').
+    get_ai_level('CPU1', Level1),
+    get_ai_level('CPU2', Level2).
 
 % get_player_name(+PlayerLabel, -Name)
 % Asks for player name and validates it
@@ -104,17 +104,20 @@ get_player_name(PlayerLabel, Name) :-
     catch(read(Name), error(syntax_error(_), _), fail),
     valid_name(Name).
 
-% Prompts for AI difficulty
-get_ai_level(Level, Label) :-
-    ( var(Label) -> format('Choose computer difficulty (1: Easy, 2: Hard): ', []);
-      format('Choose difficulty for ~w (1: Easy, 2: Hard): ', [Label])
-    ),
+$ get_ai_level(+Label, -Level)
+% Asks for AI difficulty
+get_ai_level(Label, Level) :-
+    format('Choose difficulty for ~w (1: Easy, 2: Hard): ', [Label])
     catch(read(Input), error(syntax_error(_), _), fail),
-    (   integer(Input), member(Input, [1, 2])
-    ->  Level = Input
-    ;   write('Invalid difficulty! Please choose 1 or 2.'), nl,
-        get_ai_level(Level, Label)
-    ).
+    validate_difficulty(Input, Level).
+
+% validate_difficulty(+Input, -Level)
+% Validates AI difficulty input
+validate_difficulty(1, 1).
+validate_difficulty(2, 2).
+validate_difficulty(_, _) :-
+    write('Invalid difficulty! Please choose 1 or 2.'), nl,
+    fail.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game State Initialization
