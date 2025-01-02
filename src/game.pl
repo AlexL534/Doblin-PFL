@@ -363,14 +363,11 @@ vertical_lines(Grid, Symbol) :-
 diagonal_lines(Grid, Symbol) :-
     diagonals(Grid, Diagonals),
     member(Diagonal, Diagonals),
-    sublist_from(Diagonal, 1, [Symbol, Symbol, Symbol, Symbol]).
+    contains_sequence(Diagonal, [Symbol, Symbol, Symbol, Symbol]).
 
-% Helper to extract a sublist starting from a given index
-sublist_from(List, Start, Sublist) :-
-    length(Prefix, Start),
-    append(Prefix, Rest, List),
-    length(Sublist, 4),
-    append(Sublist, _, Rest).
+% Checks if a sequence of 4 symbols appears in a list (diagonal)
+contains_sequence(Diagonal, Sequence) :-
+    append(_, Sequence, Diagonal).
 
 % Extracts all diagonals (\ and /) from a grid
 diagonals(Grid, Diagonals) :-
@@ -379,7 +376,7 @@ diagonals(Grid, Diagonals) :-
     findall(Diagonal, extract_reverse_diagonal(Grid, Size, Diagonal), Diagonals2),
     append(Diagonals1, Diagonals2, Diagonals).
 
-% Extracts a single diagonal from the grid
+% Extracts a single diagonal from the grid (\ direction)
 extract_diagonal(Grid, Size, Diagonal) :-
     MaxOffset is Size - 1,
     MinOffset is -(MaxOffset),
@@ -392,13 +389,14 @@ extract_diagonal(Grid, Size, Diagonal) :-
         nth1(Col, GridRow, Cell)
     ), Diagonal).
 
+% Extracts a single diagonal from the grid ('/' direction)
 extract_reverse_diagonal(Grid, Size, Diagonal) :-
     MaxOffset is Size - 1,
     MinOffset is -(MaxOffset),
     between(MinOffset, MaxOffset, Offset),
     findall(Cell, (
         between(1, Size, Row),
-        Col is Row - Offset,  % For '/' direction
+        Col is Row - Offset,  
         within_bounds(Col, Size),
         nth1(Row, Grid, GridRow),
         nth1(Col, GridRow, Cell)
@@ -406,6 +404,8 @@ extract_reverse_diagonal(Grid, Size, Diagonal) :-
 
 % Checks if a value is within bounds
 within_bounds(Value, Max) :-
+    Value >= 1, Value =< Max.
+
     Value >= 1, Value =< Max.
 
 % Finds all 2x2 squares of the same symbol
