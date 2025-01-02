@@ -451,9 +451,13 @@ squares_of_four(Grid, Symbol) :-
     nth1(NextCol, Row1, Symbol),
     nth1(NextCol, Row2, Symbol).
 
- 
-% Returns all valid moves for the current game state.
-valid_moves(Grid1, ListOfMoves) :-
+% valid_moves(+GameState, -ListOfMoves)
+% Returns all valid moves for current game state
+valid_moves(gameState(Grid1, Grid2, CurrentPlayer, Name1, Name2, _, _), ListOfMoves) :-
+    (   CurrentPlayer = Name1 -> 
+        Grid = Grid1; 
+        Grid = Grid2
+    ),
     length(Grid1, Size),
     findall(move(Row, Letter), 
         (   between(1, Size, Row), 
@@ -469,12 +473,11 @@ col_to_atom(Col, Letter) :-
 
 % Checks if the game is over and determines the winner
 game_over(GameState(Grid1, Grid2, _, _, _, _, _), Winner) :-
-    valid_moves(Grid1,Moves1),
-    valid_moves(Grid2,Moves2),
-    length(Moves1,Lmoves1),
+    valid_moves(GameState, Moves2),
     length(Moves2,Lmoves2),
-    % No valid moves left for both players
-    (   Lmoves1 == 0, Lmoves2 == 0 -> 
+    % If Player 2 has no valid moves the game ends, as he is always the last one to play
+    (   Lmoves2 == 0 -> 
+        get_grids(GameState, Grid1, Grid2),
         calculate_points(Grid1, player1, Points1),
         calculate_points(Grid2, player2, Points2),
         (   Points1 == Points2 -> Winner = draw;
@@ -556,6 +559,10 @@ handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, Co
     move(GameState(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), Move, NewGameState),
     format('Computer chose move: ~w~n', [Move]).
 
-% Placeholder predicates for required logic (to be implemented):
-% evaluate_board/3
-% random_move/2, greedy_move/2
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Utils
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Helper to get the grids from game state
+get_grids(game_state(Grid1, Grid2, _, _, _, _, _), Grid1, Grid2).
+
