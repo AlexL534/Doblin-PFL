@@ -41,9 +41,9 @@ validate_choice(Choice, Size) :-
     initial_state(GameConfig, InitialState),
     game_loop(InitialState).
 
-validate_choice(_, Size) :-
+validate_choice(_) :-
     write('Invalid option! Please try again.'), nl,
-    main_menu(Size).
+    main_menu.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Configuration
@@ -53,19 +53,29 @@ validate_choice(_, Size) :-
 % Asks for and validates grid size
 get_grid_size(Size) :-
     write('Choose grid size (between 6 and 9): '),
-    catch(read(Input), error(syntax_error(_), _), fail),
-    (   integer(Input), Input >= 6, Input =< 9
-    ->  Size = Input
-    ;   write('Invalid grid size! Please choose a size between 6 and 9.'), nl,
-        get_grid_size(Size)
-    ).
+    read(Input),
+    valid_grid_size(Input, Size).
 
-% Ensures name does not exceed 16 characters
+% valid_grid_size(+Input, -Size)
+% Validates grid size
+valid_grid_size(Input, Size) :-
+    integer(Input),
+    Input >= 6,
+    Input =< 9,
+    Size = Input.
+
+valid_grid_size(_, Size) :-
+    write('Invalid grid size! Please choose a size between 6 and 9.'), nl,
+    get_grid_size(Size).
+
+% valid_name(+Name)
+% Ensures name does not exceed 16 characters and is not 'CPU'
 valid_name(Name) :-
     Name \== 'CPU',
     atom_length(Name, Length),
     Length =< 16. 
 
+% configure_game(+Mode, +Size, -Config) :- 
 % Configures the game based on selected mode
 configure_game(1, Size, config(Name1, Name2, _, _, Size)) :- 
     write('Human vs Human selected.'), nl,
@@ -87,15 +97,12 @@ configure_game(4, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
     get_ai_level(Level1, 'CPU1'),
     get_ai_level(Level2, 'CPU2').
 
-% Prompts for player name
+% get_player_name(+PlayerLabel, -Name)
+% Asks for player name and validates it
 get_player_name(PlayerLabel, Name) :-
     format('Enter name for ~w: ', [PlayerLabel]),
-    catch(read(Input), error(syntax_error(_), _), fail),
-    (   atom(Input), valid_name(Input)
-    ->  Name = Input
-    ;   write('Invalid name! Please enter a name using only letters and ensure it does not exceed 16 characters.'), nl,
-        get_player_name(PlayerLabel, Name)
-    ).
+    catch(read(Name), error(syntax_error(_), _), fail),
+    valid_name(Name).
 
 % Prompts for AI difficulty
 get_ai_level(Level, Label) :-
