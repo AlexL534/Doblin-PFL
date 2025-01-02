@@ -338,16 +338,21 @@ calculate_points(Grid, Player, Points) :-
     length(Diagonals, DiagonalCount),
     length(Squares, SquareCount),
     Points is HorizontalCount + VerticalCount + DiagonalCount + SquareCount,
+    
+    % Print the counts for each type
+    format('Horizontal lines of ~w: ~w~n', [Symbol, HorizontalCount]),
+    format('Vertical lines of ~w: ~w~n', [Symbol, VerticalCount]),
+    format('Diagonal lines of ~w: ~w~n', [Symbol, DiagonalCount]),
+    format('Squares of ~w: ~w~n', [Symbol, SquareCount]),
+    
+    % Print the total points
     format('Player ~w has ~w points.~n', [Player, Points]).
-
+ 
 
 % Finds all horizontal lines of length 4 of a certain symbol
 horizontal_lines(Grid, Symbol) :-
     member(Row, Grid),
-    length(Row, Length),
-    MaxStart is Length - 3,
-    between(1, MaxStart, Start),
-    sublist_from(Row, Start, [Symbol, Symbol, Symbol, Symbol]).
+    append(_, [Symbol, Symbol, Symbol, Symbol | _], Row).
 
 % Finds all vertical lines of length 4 of a certain symbol
 vertical_lines(Grid, Symbol) :-
@@ -365,7 +370,7 @@ sublist_from(List, Start, Sublist) :-
     length(Prefix, Start),
     append(Prefix, Rest, List),
     length(Sublist, 4),
-    prefix(Sublist, Rest).
+    append(Sublist, _, Rest).
 
 % Extracts all diagonals (\ and /) from a grid
 diagonals(Grid, Diagonals) :-
@@ -474,7 +479,7 @@ choose_move(Grid, Level, Move) :-
 game_loop(GameState) :-
     display_game(GameState),
     (game_over(GameState, Winner) ->
-        write('game finnished'),nl,
+        write('game finished'),nl,
         announce_winner(Winner),!;
         current_player_turn(GameState, NewGameState),
         (   NewGameState = quit ->
