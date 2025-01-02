@@ -123,7 +123,7 @@ validate_difficulty(CPUName, _, _) :-
 % Game State Initialization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% initial_state(+GameConfig, +GameState) :-
+% initial_state(+GameConfig, -GameState) :-
 % Initializes the game state based on the configuration
 initial_state(GameConfig(Name1, Name2, _, _, Size), GameState(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping)) :-
     CurrentPlayer = Name1,
@@ -155,6 +155,7 @@ generate_mappings(Size, RowMapping, ColMapping) :-
 % Game Display
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% display_game(+GameState)
 % Display the current game state
 display_game(GameState(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping)) :-
     length(Grid1, Size),
@@ -268,10 +269,10 @@ display_quit_message(Player) :-
 % Move Execution and Validation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Utility to find the index of an element in a list.
-index_of([Element|_], Element, 1).  % The element is found at the first position.
+index_of([Element|_], Element, 1). 
 index_of([_|Tail], Element, Index) :- 
-    index_of(Tail, Element, Index1),  % Recursively look for the element
-    Index is Index1 + 1.              % Increment the index as we move through the list
+    index_of(Tail, Element, Index1),  
+    Index is Index1 + 1.             
 
 reverseMapping(Mapping, ReverseMapping) :-
     length(Mapping, Size),
@@ -286,7 +287,7 @@ reverseMappingAux([Elem|Tail], Index, CurrentReverseMapping, ReverseMapping) :-
     reverseMappingAux(Tail, NextIndex, UpdatedReverseMapping, ReverseMapping).
 
 % checks if a position is within bounds and does not already have a piece
-validate_move(Grid1, move(Row, Col)) :-
+validate_move(Grid1, Move(Row, Col)) :-
     length(Grid1, Max),
     Row >= 1, Row =< Max,
     Col >= 1, Col =< Max,
@@ -295,16 +296,17 @@ validate_move(Grid1, move(Row, Col)) :-
     Symbol == '_ '.
 
 % Executes a move if valid and updates the game state.
-move(GameState(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, ColLetter), GameState(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping)) :-
+% move(+GameState, )
+move(GameState(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), Move(Row, ColLetter), GameState(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping)) :-
     write('Current Player: '), write(CurrentPlayer), nl,
     atom(ColLetter),
     letter_to_index(ColLetter, Col),
     (   CurrentPlayer == Player1 ->
-            validate_move(Grid1, move(Row, Col)),
+            validate_move(Grid1, Move(Row, Col)),
             NextPlayer = Player2,
             place_symbol_player1('X ', Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2);
         (Player2 \== 'CPU' , Player2 \== 'CPU2' -> translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol);TranslatedRow is Row,TranslatedCol is Col),
-        validate_move(Grid2, move(TranslatedRow, TranslatedCol)),
+        validate_move(Grid2, Move(TranslatedRow, TranslatedCol)),
         NextPlayer = Player1,
         reverseMapping(RowMapping, ReverseRowMapping),
         reverseMapping(ColMapping, ReverseColMapping),
@@ -456,7 +458,7 @@ valid_moves(Grid1, ListOfMoves) :-
     findall(move(Row, Letter), 
         (   between(1, Size, Row), 
             between(1, Size, Col),
-            validate_move(Grid1, move(Row, Col)),
+            validate_move(Grid1, Move(Row, Col)),
             col_to_atom(Col, Letter)
         ), 
         ListOfMoves).
@@ -538,8 +540,8 @@ handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, Co
     (   Input = quit ->
         display_quit_message(CurrentPlayer),
         NewGameState = quit;
-        (   Input = move(Row, Col),
-            (move(GameState(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, Col), NewGameState) -> true;
+        (   Input = Move(Row, Col),
+            (move(GameState(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), Move(Row, Col), NewGameState) -> true;
             write('Invalid move! Try again.'), nl,
             handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState))
         )
