@@ -104,20 +104,20 @@ get_player_name(PlayerLabel, Name) :-
     catch(read(Name), error(syntax_error(_), _), fail),
     valid_name(Name).
 
-$ get_ai_level(+Label, -Level)
+% get_ai_level(+CPUName, -Level)
 % Asks for AI difficulty
-get_ai_level(Label, Level) :-
-    format('Choose difficulty for ~w (1: Easy, 2: Hard): ', [Label])
+get_ai_level(CPUName, Level) :-
+    format('Choose difficulty for ~w (1: Easy, 2: Hard): ', [CPUName]),
     catch(read(Input), error(syntax_error(_), _), fail),
-    validate_difficulty(Input, Level).
+    validate_difficulty(CPUName, Input, Level).
 
-% validate_difficulty(+Input, -Level)
+% validate_difficulty(+CPUName, +Input, -Level)
 % Validates AI difficulty input
-validate_difficulty(1, 1).
-validate_difficulty(2, 2).
-validate_difficulty(_, _) :-
+validate_difficulty(_, 1, 1).
+validate_difficulty(_, 2, 2).
+validate_difficulty(CPUName, _, _) :-
     write('Invalid difficulty! Please choose 1 or 2.'), nl,
-    fail.
+    get_ai_level(CPUName, Level).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game State Initialization
