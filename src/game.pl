@@ -21,7 +21,7 @@ main_menu :-
     write('3. Computer vs Computer'), nl,
     write('4. Quit'), nl,
     write('Choose an option: '), nl,
-    catch(read(Choice), _, fail),
+    catch(read(Choice), error(syntax_error(_), _), fail),
     (   integer(Choice), member(Choice, [1, 2, 3, 4])
     ->  (   Choice = 4
         ->  write('Goodbye!'), nl;   
@@ -41,7 +41,7 @@ main_menu :-
 % Asks for and validates grid size
 get_grid_size(Size) :-
     write('Choose grid size (between 6 and 9): '),
-    catch(read(Input), _, fail),
+    catch(read(Input), error(syntax_error(_), _), fail),
     (   integer(Input), Input >= 6, Input =< 9
     ->  Size = Input
     ;   write('Invalid grid size! Please choose a size between 6 and 9.'), nl,
@@ -73,7 +73,7 @@ configure_game(3, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
 % Prompts for player name
 get_player_name(PlayerLabel, Name) :-
     format('Enter name for ~w: ', [PlayerLabel]),
-    catch(read(Input), _, fail),
+    catch(read(Input), error(syntax_error(_), _), fail),
     (   atom(Input), valid_name(Input)
     ->  Name = Input
     ;   write('Invalid name! Please enter a name using only letters and ensure it does not exceed 16 characters.'), nl,
@@ -85,7 +85,7 @@ get_ai_level(Level, Label) :-
     ( var(Label) -> format('Choose computer difficulty (1: Easy, 2: Hard): ', []);
       format('Choose difficulty for ~w (1: Easy, 2: Hard): ', [Label])
     ),
-    catch(read(Input), _, fail),
+    catch(read(Input), error(syntax_error(_), _), fail),
     (   integer(Input), member(Input, [1, 2])
     ->  Level = Input
     ;   write('Invalid difficulty! Please choose 1 or 2.'), nl,
@@ -508,7 +508,7 @@ current_player_turn(GameState, NewGameState) :-
 % Handles a human player turn
 handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState) :-
     format('~w, it\'s your turn! Enter your move (Row,Col) or type "quit" to exit: ', [CurrentPlayer]),
-    catch(read(Input), _, fail),
+    catch(read(Input), error(syntax_error(_), _), fail),
     (   Input = quit ->
         display_quit_message(CurrentPlayer),
         NewGameState = quit;
