@@ -328,7 +328,7 @@ letter_to_index(i, 9).
 
 % Counts how many lines of 4 or squares a player has in their own grid
 calculate_points(Grid, Player, Points) :-
-    (Player = player1 -> Symbol = 'X'; Symbol = 'O'),
+    (Player = player1 -> Symbol = 'X '; Symbol = 'O '),
     findall(_, horizontal_lines(Grid, Symbol), Horizontal),
     findall(_, vertical_lines(Grid, Symbol), Vertical),
     findall(_, diagonal_lines(Grid, Symbol), Diagonals),
@@ -337,7 +337,9 @@ calculate_points(Grid, Player, Points) :-
     length(Vertical, VerticalCount),
     length(Diagonals, DiagonalCount),
     length(Squares, SquareCount),
-    Points is HorizontalCount + VerticalCount + DiagonalCount + SquareCount.
+    Points is HorizontalCount + VerticalCount + DiagonalCount + SquareCount,
+    format('Player ~w has ~w points.~n', [Player, Points]).
+
 
 % Finds all horizontal lines of length 4 of a certain symbol
 horizontal_lines(Grid, Symbol) :-
