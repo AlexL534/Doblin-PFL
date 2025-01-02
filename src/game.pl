@@ -8,10 +8,12 @@
 % Game Menu 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% play/0
 % Starts the game by displaying the main menu
 play :-
     main_menu.
 
+% main_menu/0
 % Displays the game menu and handles user choices
 main_menu :-
     write('Welcome to Doblin!'), nl,
@@ -23,22 +25,31 @@ main_menu :-
     write('5. Quit'), nl,
     write('Choose an option: '), nl,
     catch(read(Choice), error(syntax_error(_), _), fail),
-    (   integer(Choice), member(Choice, [1, 2, 3, 4, 5])
-    ->  (   Choice = 5
-        ->  write('Goodbye!'), nl;   
-            configure_game(Choice, Size, GameConfig),
-            initial_state(GameConfig, InitialState),
-            game_loop(InitialState)
-        );   
-        write('Invalid option! Please try again.'), nl,
-        main_menu
-    ).
+    validate_choice(Choice, Size).
 
+% validate_choice(+Choice, +Size)
+% Validates the menu choice and handles it
+validate_choice(Choice, _) :-
+    integer(Choice),
+    member(Choice, [5]),
+    write('Goodbye!'), nl.
+
+validate_choice(Choice, Size) :-
+    integer(Choice),
+    member(Choice, [1, 2, 3, 4]),
+    configure_game(Choice, Size, GameConfig),
+    initial_state(GameConfig, InitialState),
+    game_loop(InitialState).
+
+validate_choice(_, Size) :-
+    write('Invalid option! Please try again.'), nl,
+    main_menu(Size).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Configuration
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% get_grid_size(+Size)
 % Asks for and validates grid size
 get_grid_size(Size) :-
     write('Choose grid size (between 6 and 9): '),
