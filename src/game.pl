@@ -201,15 +201,24 @@ print_side_by_side(Grid1, Grid2, RowMapping) :-
 
 % Helper to print rows side by side with correct row numbers
 print_side_by_side_rows([], [], [], []).
-print_side_by_side_rows([Row1|Rest1], [Row2|Rest2], Player1RowNumbers, [Player2Row|RestPlayer2Rows]) :-
+print_side_by_side_rows(Player1Rows, Player2Rows, Player1RowNumbers, Player2RowNumbers) :-
     last(Player1RowNumbers,Player1Last),
     length(Player1RowNumbers,SizeP1),
     nth1(SizeP1,Player1RowNumbers,_,RestPlayer1Rows),
+    last(Player2RowNumbers,Player2Last),
+    length(Player2RowNumbers,SizeP2),
+    nth1(SizeP2,Player2RowNumbers,_,RestPlayer2Rows),
+
+    last(Player1Rows,Row1),
+    last(Player2Rows,Row2),
+    nth1(SizeP1,Player1Rows,_,Rest1),
+    nth1(SizeP2,Player2Rows,_,Rest2),
+    
     format('~d ', [Player1Last]),  % Correct Player 1 row number
     print_row(Row1),  % Print Player 1 row
     write('    '),  % Space between grids
     print_row(Row2),  % Print Player 2 row
-    format(' ~d', [Player2Row]),  % Correct Player 2 row number (mapped)
+    format(' ~d', [Player2Last]),  % Correct Player 2 row number (mapped)
     nl,
     print_side_by_side_rows(Rest1, Rest2, RestPlayer1Rows, RestPlayer2Rows).
 
@@ -266,30 +275,26 @@ move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMa
             validate_move(Grid1, move(Row, Col)),
             NextPlayer = Player2,
             place_symbol_player1('X ', Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2);
-        
-        validate_move(Grid2, move(Row, Col)),
+        (Player2 \== 'CPU' , Player2 \== 'CPU2' -> translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol);TranslatedRow is Row,TranslatedCol is Col),
+        validate_move(Grid2, move(TranslatedRow, TranslatedCol)),
         NextPlayer = Player1,
         reverseMapping(RowMapping, ReverseRowMapping),
         reverseMapping(ColMapping, ReverseColMapping),
-        place_symbol_player2('O ', Grid2, Grid1, Row, Col, ReverseRowMapping, ReverseColMapping,RowMapping,ColMapping, NewGrid2, NewGrid1)
+        place_symbol_player2('O ', Grid2, Grid1, TranslatedRow, TranslatedCol, ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1)
     ).
 
 % Places a symbol on both grids according to the mappings.
 
 place_symbol_player1(Symbol, Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
-    length(Grid1,Size),
-    NewRow is Size +1 -Row,
-    update_grid(Grid1, NewRow, Col, Symbol, NewGrid1),
+    update_grid(Grid1, Row, Col, Symbol, NewGrid1),
     translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
     update_grid(Grid2, TranslatedRow, TranslatedCol, Symbol, NewGrid2).
 
-place_symbol_player2(Symbol, Grid1, Grid2, Row, Col, RowMappingForGrid2, ColMappingForGrid2, RowMappingForGrid1, ColMappingForGrid1, NewGrid1, NewGrid2) :-
-    length(Grid2,Size),
-    translate_coordinates(Row, Col, RowMappingForGrid1, ColMappingForGrid1, TranslatedRowG1, TranslatedColG1),
-    update_grid(Grid1, TranslatedRowG1, TranslatedColG1, Symbol, NewGrid1),
-    translate_coordinates(TranslatedRowG1, TranslatedColG1, RowMappingForGrid2, ColMappingForGrid2, TranslatedRow, TranslatedCol),
-    NewRow is Size +1 -TranslatedRow,
-    update_grid(Grid2, NewRow, TranslatedCol, Symbol, NewGrid2).
+place_symbol_player2(Symbol, Grid1, Grid2, Row, Col, RowMappingForGrid2, ColMappingForGrid2, NewGrid1, NewGrid2) :-
+    
+    update_grid(Grid1, Row, Col, Symbol, NewGrid1),
+    translate_coordinates(Row, Col, RowMappingForGrid2, ColMappingForGrid2, TranslatedRow, TranslatedCol),
+    update_grid(Grid2, TranslatedRow, TranslatedCol, Symbol, NewGrid2).
 
 % Updates a specific cell in a grid.
 update_grid(Grid, Row, Col, Symbol, NewGrid) :-
