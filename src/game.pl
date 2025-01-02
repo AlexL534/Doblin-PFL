@@ -285,10 +285,9 @@ place_symbol_player1(Symbol, Grid1, Grid2, Row, Col, RowMapping, ColMapping, New
 
 place_symbol_player2(Symbol, Grid1, Grid2, Row, Col, RowMappingForGrid2, ColMappingForGrid2, RowMappingForGrid1, ColMappingForGrid1, NewGrid1, NewGrid2) :-
     length(Grid2,Size),
-    index_of(RowMappingForGrid1,Row,TR),
-    index_of(ColMappingForGrid1,Col,TC),
-    update_grid(Grid1, TR, TC, Symbol, NewGrid1),
-    translate_coordinates(TR, TC, RowMappingForGrid2, ColMappingForGrid2, TranslatedRow, TranslatedCol),
+    translate_coordinates(Row, Col, RowMappingForGrid1, ColMappingForGrid1, TranslatedRowG1, TranslatedColG1),
+    update_grid(Grid1, TranslatedRowG1, TranslatedColG1, Symbol, NewGrid1),
+    translate_coordinates(TranslatedRowG1, TranslatedColG1, RowMappingForGrid2, ColMappingForGrid2, TranslatedRow, TranslatedCol),
     NewRow is Size +1 -TranslatedRow,
     update_grid(Grid2, NewRow, TranslatedCol, Symbol, NewGrid2).
 
