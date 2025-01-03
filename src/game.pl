@@ -313,7 +313,7 @@ move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMa
     write('Current Player: '), write(CurrentPlayer), nl,
     atom(ColLetter),
     letter_to_index(ColLetter, Col),
-    (   CurrentPlayer == Player1 ->
+    (   CurrentPlayer = Player1 ->
             validate_move(Grid1, move(Row, Col)),
             NextPlayer = Player2,
             place_symbol_player1('X ', Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2);
@@ -577,7 +577,7 @@ handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, Co
 % Handles a computer player turn
 handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
     write('Computer is thinking...'), nl,
-    (CurrentPlayer == Player1 -> choose_move(Grid1, AI1Level, CurrentPlayer,Player1, Move),write('Used grid1'),nl;
+    (CurrentPlayer = Player1 -> choose_move(Grid1, AI1Level, CurrentPlayer,Player1, Move),write('Used grid1'),nl;
      choose_move(Grid2, AI2Level, CurrentPlayer, Player1, Move),write('Used grid2'),nl),
      % Replace 1 with AI level if needed
     move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), Move, NewGameState),
