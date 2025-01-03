@@ -379,12 +379,7 @@ calculate_points(Grid, Player, Player1, Points) :-
     length(Vertical, VerticalCount),
     length(Diagonals, DiagonalCount),
     length(Squares, SquareCount),
-    Points is HorizontalCount + VerticalCount + DiagonalCount + SquareCount,
-
-    format('Diagonal lines of ~w: ~w~n', [Symbol, DiagonalCount]),
-    
-    format('Player ~w has ~w points.~n', [Player, Points]).
- 
+    Points is HorizontalCount + VerticalCount + DiagonalCount + SquareCount.
 
 % Finds all horizontal lines of length 4 of a certain symbol
 horizontal_lines(Grid, Symbol) :-
@@ -499,6 +494,8 @@ game_over(game_state(Grid1, Grid2, _, _, _, _, _, _, _), Winner) :-
                 Winner = player2
             )
         );
+        format('Player 1 has ~w points.~n', [Points1]),
+        format('Player 2 has ~w points.~n', [Points2]);
         fail
     ).
 
