@@ -37,8 +37,8 @@ validate_choice(Choice, _) :-
 validate_choice(Choice, Size) :-
     integer(Choice),
     member(Choice, [1, 2, 3, 4]),
-    configure_game(Choice, Size, config),
-    initial_state(config, InitialState),
+    configure_game(Choice, Size, GameConfig),
+    initial_state(GameConfig, InitialState),
     game_loop(InitialState).
 
 validate_choice(_) :-
@@ -75,7 +75,7 @@ valid_name(Name) :-
     atom_length(Name, Length),
     Length =< 16. 
 
-% configure_game(+Mode, +Size, -GameConfig) :- 
+% configure_game(+Mode, +Size, -Config) :- 
 % Configures the game based on selected mode
 configure_game(1, Size, config(Name1, Name2, _, _, Size)) :- 
     write('Human vs Human selected.'), nl,
@@ -123,7 +123,6 @@ validate_difficulty(CPUName, _, _) :-
 % Game State Initialization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% initial_state(+GameConfig, -GameState) :-
 % Initializes the game state based on the configuration
 initial_state(config(Name1, Name2, _, _, Size), game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping)) :-
     CurrentPlayer = Name1,
@@ -155,7 +154,6 @@ generate_mappings(Size, RowMapping, ColMapping) :-
 % Game Display
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% display_game(+GameState)
 % Display the current game state
 display_game(game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping)) :-
     length(Grid1, Size),
@@ -269,10 +267,10 @@ display_quit_message(Player) :-
 % Move Execution and Validation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Utility to find the index of an element in a list.
-index_of([Element|_], Element, 1). 
+index_of([Element|_], Element, 1).  % The element is found at the first position.
 index_of([_|Tail], Element, Index) :- 
-    index_of(Tail, Element, Index1),  
-    Index is Index1 + 1.             
+    index_of(Tail, Element, Index1),  % Recursively look for the element
+    Index is Index1 + 1.              % Increment the index as we move through the list
 
 reverseMapping(Mapping, ReverseMapping) :-
     length(Mapping, Size),
@@ -296,7 +294,6 @@ validate_move(Grid1, move(Row, Col)) :-
     Symbol == '_ '.
 
 % Executes a move if valid and updates the game state.
-% move(+GameState, )
 move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), move(Row, ColLetter), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping)) :-
     write('Current Player: '), write(CurrentPlayer), nl,
     atom(ColLetter),
@@ -451,13 +448,9 @@ squares_of_four(Grid, Symbol) :-
     nth1(NextCol, Row1, Symbol),
     nth1(NextCol, Row2, Symbol).
 
-% valid_moves(+GameState, -ListOfMoves)
-% Returns all valid moves for current game state
-valid_moves(gameState(Grid1, Grid2, CurrentPlayer, Name1, Name2, _, _), ListOfMoves) :-
-    (   CurrentPlayer = Name1 -> 
-        Grid = Grid1; 
-        Grid = Grid2
-    ),
+ 
+% Returns all valid moves for the current game state.
+valid_moves(Grid1, ListOfMoves) :-
     length(Grid1, Size),
     findall(move(Row, Letter), 
         (   between(1, Size, Row), 
@@ -473,11 +466,12 @@ col_to_atom(Col, Letter) :-
 
 % Checks if the game is over and determines the winner
 game_over(game_state(Grid1, Grid2, _, _, _, _, _), Winner) :-
-    valid_moves(game_state, Moves2),
+    valid_moves(Grid1,Moves1),
+    valid_moves(Grid2,Moves2),
+    length(Moves1,Lmoves1),
     length(Moves2,Lmoves2),
-    % If Player 2 has no valid moves the game ends, as he is always the last one to play
-    (   Lmoves2 == 0 -> 
-        get_grids(game_state, Grid1, Grid2),
+    % No valid moves left for both players
+    (   Lmoves1 == 0, Lmoves2 == 0 -> 
         calculate_points(Grid1, player1, Points1),
         calculate_points(Grid2, player2, Points2),
         (   Points1 == Points2 -> Winner = draw;
@@ -530,8 +524,8 @@ announce_winner(Winner) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Handles current player turn
-current_player_turn(game_state, NewGameState) :-
-    game_state = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping),
+current_player_turn(GameState, NewGameState) :-
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping),
     (CurrentPlayer \== 'CPU', CurrentPlayer \== 'CPU1', CurrentPlayer \== 'CPU2' ->
         handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState);
         handle_computer_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, NewGameState)).
@@ -558,11 +552,3 @@ handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, Co
      % Replace 1 with AI level if needed
     move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), Move, NewGameState),
     format('Computer chose move: ~w~n', [Move]).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Utils
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Helper to get the grids from game state
-get_grids(game_state(Grid1, Grid2, _, _, _, _, _), Grid1, Grid2).
-
