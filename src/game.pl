@@ -463,11 +463,29 @@ value(game_state(Grid1, _, _, _, _, _), Player, Value) :-
 random_move(Grid,Move) :-
         valid_moves(Grid, ListOfMoves),
         random_member(Move, ListOfMoves).
+
+get_best_move(_,_,_,_,[],Move,Move) :-!.
+get_best_move(Grid,Points,Difference,Player,[Move|ListOfMoves],CurrentBest,BestMove) :-
+    Move = move(Row,ColLetter),
+    atom(ColLetter),
+    letter_to_index(ColLetter,Col),
+    (Player = player1 -> update_grid(Grid,Row,Col,'X ',NewGrid);update_grid(Grid,Row,Col,'O ',NewGrid)),
+    calculate_points(NewGrid,Player,UpdatedPoints),
+    NewDifference is UpdatedPoints-Points,
+    (NewDifference =< Difference  ->
+     get_best_move(Grid,Points,NewDifference,Player,ListOfMoves,Move,BestMove);
+     get_best_move(Grid,Points,Difference,Player,ListOfMoves,CurrentBest,BestMove)).
+
+greedy_move(Grid,Player,Move) :-
+    valid_moves(Grid,ListOfMoves),
+    write(ListOfMoves),nl,
+    calculate_points(Grid,Player,Points),
+    get_best_move(Grid,Points,999,Player,ListOfMoves,move(-1,-1),Move).
         
 % Chooses a move for the computer player based on difficulty level (level 1 should return a random valid move and level 2 the best play with a greedy algorithm)
-choose_move(Grid, Level, Move) :-
+choose_move(Grid, Level, Player, Move) :-
     (Level = 1 -> random_move(Grid, Move),!;
-     Level = 2 -> greedy_move(Grid, Move)).
+     Level = 2 -> greedy_move(Grid,Player, Move)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Loop
