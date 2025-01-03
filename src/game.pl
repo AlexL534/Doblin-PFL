@@ -183,8 +183,8 @@ display_game(game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, C
 
 print_current_player(CurrentPlayer, Name1, Name2) :-
     (   CurrentPlayer = Name1
-    ->  format('Current Player: ~w~n', [Name1])  % Player 1 turn
-    ;   format('Current Player: ~w~n', [Name2])  % Player 2 turn
+    ->  format('Current Player: ~w~n', [Name1]) 
+    ;   format('Current Player: ~w~n', [Name2]) 
     ).
 
 print_player_names(Name, Width, Offset) :-
@@ -306,7 +306,7 @@ validate_move(Grid1, move(Row, Col)) :-
     Col >= 1, Col =< Max,
     nth1(Row, Grid1, TargetRow),
     nth1(Col, TargetRow, Symbol),
-    Symbol == '_ '.
+    Symbol = '_ '.
 
 % Executes a move if valid and updates the game state.
 move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping,AI1Level,AI2Level), move(Row, ColLetter), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping,AI1Level,AI2Level)) :-
@@ -481,21 +481,19 @@ col_to_atom(Col, Letter) :-
 
 % Checks if the game is over and determines the winner
 game_over(game_state(Grid1, Grid2, _, _, _, _, _, _, _), Winner) :-
-    valid_moves(Grid1,Moves1),
     valid_moves(Grid2,Moves2),
-    length(Moves1,Lmoves1),
     length(Moves2,Lmoves2),
-    % No valid moves left for both players
-    (   Lmoves1 == 0, Lmoves2 == 0 -> 
+    % No valid moves left for player 2 (he always does last move)
+    (   Lmoves2 == 0 -> 
         calculate_points(Grid1, player1,player1, Points1),
         calculate_points(Grid2, player2,player1, Points2),
+        format('Player 1 (X) Points: ~w~n', [Points1]),
+        format('Player 2 (O) Points: ~w~n', [Points2]),
         (   Points1 == Points2 -> Winner = draw;
             (   Points1 < Points2 -> Winner = player1;
                 Winner = player2
             )
         );
-        format('Player 1 has ~w points.~n', [Points1]),
-        format('Player 2 has ~w points.~n', [Points2]);
         fail
     ).
 
@@ -503,10 +501,9 @@ game_over(game_state(Grid1, Grid2, _, _, _, _, _, _, _), Winner) :-
 value(game_state(Grid1, _, _, _, _, _), Player, Value) :-
     evaluate_board(Grid1, Player, Value).
 
-
 random_move(Grid,Move) :-
-        valid_moves(Grid, ListOfMoves),
-        random_member(Move, ListOfMoves).
+    valid_moves(Grid, ListOfMoves),
+    random_member(Move, ListOfMoves).
 
 get_best_move(_,_,_,_,_,[],Move,Move) :-!.
 get_best_move(Grid,Points,Difference,Player,Player1,[Move|ListOfMoves],CurrentBest,BestMove) :-
@@ -522,7 +519,6 @@ get_best_move(Grid,Points,Difference,Player,Player1,[Move|ListOfMoves],CurrentBe
 
 greedy_move(Grid,Player,Player1,Move) :-
     valid_moves(Grid,ListOfMoves),
-    write(ListOfMoves),nl,
     calculate_points(Grid,Player,Player1,Points),
     get_best_move(Grid,Points,999,Player,Player1,ListOfMoves,move(-1,-1),Move).
         
@@ -539,7 +535,6 @@ choose_move(Grid, Level, Player, Player1, Move) :-
 game_loop(GameState) :-
     display_game(GameState),
     (game_over(GameState, Winner) ->
-        write('game finished'),nl,
         announce_winner(Winner),!;
         current_player_turn(GameState, NewGameState),
         (   NewGameState = quit ->
