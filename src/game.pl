@@ -354,7 +354,7 @@ letter_to_index(i, 9).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Counts how many lines of 4 or squares a player has in their own grid
-calculate_points(Grid, Player,Player1, Points) :-
+calculate_points(Grid, Player, Player1, Points) :-
     (Player = Player1 -> Symbol = 'X '; Symbol = 'O '),
     findall(_, horizontal_lines(Grid, Symbol), Horizontal),
     findall(_, vertical_lines(Grid, Symbol), Vertical),
@@ -365,14 +365,9 @@ calculate_points(Grid, Player,Player1, Points) :-
     length(Diagonals, DiagonalCount),
     length(Squares, SquareCount),
     Points is HorizontalCount + VerticalCount + DiagonalCount + SquareCount,
-    
-    % Print the counts for each type
-    format('Horizontal lines of ~w: ~w~n', [Symbol, HorizontalCount]),
-    format('Vertical lines of ~w: ~w~n', [Symbol, VerticalCount]),
+
     format('Diagonal lines of ~w: ~w~n', [Symbol, DiagonalCount]),
-    format('Squares of ~w: ~w~n', [Symbol, SquareCount]),
     
-    % Print the total points
     format('Player ~w has ~w points.~n', [Player, Points]).
  
 
@@ -402,32 +397,42 @@ diagonals(Grid, Diagonals) :-
     findall(Diagonal, extract_diagonal(Grid, Size, Diagonal), Diagonals1),
     findall(Diagonal, extract_reverse_diagonal(Grid, Size, Diagonal), Diagonals2),
     append(Diagonals1, Diagonals2, Diagonals).
+grimace([
+    ['a', 'b', 'c', 'd'],
+    ['e', 'f', 'g', 'h'],
+    ['i', 'j', 'k', 'l'],
+    ['w', 'x', 't', 'z']
+]).
 
-% Extracts a single diagonal from the grid (\ direction)
+% Extracts a single diagonal from the grid (\ direction) of length 4
 extract_diagonal(Grid, Size, Diagonal) :-
-    MaxOffset is Size - 1,
-    MinOffset is -(MaxOffset),
-    between(MinOffset, MaxOffset, Offset), 
+    between(1, Size, Row),    
+    between(1, Size, Col),  
     findall(Cell, (
-        between(1, Size, Row),
-        Col is Row + Offset,   % For '\ ' direction
-        within_bounds(Col, Size),
-        nth1(Row, Grid, GridRow),
-        nth1(Col, GridRow, Cell)
-    ), Diagonal).
+        between(0, 3, Offset),
+        RowOffset is Row + Offset,
+        ColOffset is Col + Offset,
+        within_bounds(RowOffset, Size),
+        within_bounds(ColOffset, Size),
+        nth1(RowOffset, Grid, GridRow),
+        nth1(ColOffset, GridRow, Cell)
+    ), Diagonal),
+    length(Diagonal, 4).
 
-% Extracts a single diagonal from the grid ('/' direction)
+% Extracts a single diagonal from the grid ('/' direction) of length 4
 extract_reverse_diagonal(Grid, Size, Diagonal) :-
-    MaxOffset is Size - 1,
-    MinOffset is -(MaxOffset),
-    between(MinOffset, MaxOffset, Offset),
+    between(1, Size, Row),  
+    between(1, Size, Col), 
     findall(Cell, (
-        between(1, Size, Row),
-        Col is Row - Offset,  
-        within_bounds(Col, Size),
-        nth1(Row, Grid, GridRow),
-        nth1(Col, GridRow, Cell)
-    ), Diagonal).
+        between(0, 3, Offset), 
+        RowOffset is Row + Offset,
+        ColOffset is Col - Offset,
+        within_bounds(RowOffset, Size),
+        within_bounds(ColOffset, Size),
+        nth1(RowOffset, Grid, GridRow),
+        nth1(ColOffset, GridRow, Cell)
+    ), Diagonal),
+    length(Diagonal, 4).
 
 % Checks if a value is within bounds
 within_bounds(Value, Max) :-
