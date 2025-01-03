@@ -115,7 +115,7 @@ configure_game(4, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
 % get_player_name(+PlayerLabel, -Name)
 % Asks for player name and validates it
 get_player_name(PlayerLabel, Name) :-
-    format('Enter name for ~w: ', [PlayerLabel]),
+    format('Enter name for ~w (only letters and max 16 chars): ', [PlayerLabel]),
     catch(read(Name), error(syntax_error(_), _), fail),
     valid_name(Name).
 
