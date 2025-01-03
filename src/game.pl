@@ -8,52 +8,74 @@
 % Game Menu 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% play/0
 % Starts the game by displaying the main menu
 play :-
     main_menu.
 
+% main_menu/0
 % Displays the game menu and handles user choices
 main_menu :-
     write('Welcome to Doblin!'), nl,
     get_grid_size(Size),
     write('1. Human vs Human'), nl,
     write('2. Human vs Computer'), nl,
-    write('3. Computer vs Computer'), nl,
-    write('4. Quit'), nl,
+    write('3. Computer vs Human'), nl,
+    write('4. Computer vs Computer'), nl,
+    write('5. Quit'), nl,
     write('Choose an option: '), nl,
     catch(read(Choice), error(syntax_error(_), _), fail),
-    (   integer(Choice), member(Choice, [1, 2, 3, 4])
-    ->  (   Choice = 4
-        ->  write('Goodbye!'), nl;   
-            configure_game(Choice, Size, GameConfig),
-            initial_state(GameConfig, InitialState),
-            game_loop(InitialState)
-        );   
-        write('Invalid option! Please try again.'), nl,
-        main_menu
-    ).
+    validate_choice(Choice, Size).
 
+% validate_choice(+Choice, +Size)
+% Validates the menu choice and handles it
+validate_choice(Choice, _) :-
+    integer(Choice),
+    member(Choice, [5]),
+    write('Goodbye!'), nl.
+
+validate_choice(Choice, Size) :-
+    integer(Choice),
+    member(Choice, [1, 2, 3, 4]),
+    configure_game(Choice, Size, GameConfig),
+    initial_state(GameConfig, InitialState),
+    game_loop(InitialState).
+
+validate_choice(_) :-
+    write('Invalid option! Please try again.'), nl,
+    main_menu.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Configuration
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% get_grid_size(+Size)
 % Asks for and validates grid size
 get_grid_size(Size) :-
     write('Choose grid size (between 6 and 9): '),
-    catch(read(Input), error(syntax_error(_), _), fail),
-    (   integer(Input), Input >= 6, Input =< 9
-    ->  Size = Input
-    ;   write('Invalid grid size! Please choose a size between 6 and 9.'), nl,
-        get_grid_size(Size)
-    ).
+    read(Input),
+    valid_grid_size(Input, Size).
 
-% Ensures name does not exceed 16 characters
+% valid_grid_size(+Input, -Size)
+% Validates grid size
+valid_grid_size(Input, Size) :-
+    integer(Input),
+    Input >= 6,
+    Input =< 9,
+    Size = Input.
+
+valid_grid_size(_, Size) :-
+    write('Invalid grid size! Please choose a size between 6 and 9.'), nl,
+    get_grid_size(Size).
+
+% valid_name(+Name)
+% Ensures name does not exceed 16 characters and is not 'CPU'
 valid_name(Name) :-
     Name \== 'CPU',
     atom_length(Name, Length),
     Length =< 16. 
 
+% configure_game(+Mode, +Size, -Config) :- 
 % Configures the game based on selected mode
 configure_game(1, Size, config(Name1, Name2, _, _, Size)) :- 
     write('Human vs Human selected.'), nl,
@@ -63,34 +85,39 @@ configure_game(1, Size, config(Name1, Name2, _, _, Size)) :-
 configure_game(2, Size, config(Name1, 'CPU', Level, _, Size)) :- 
     write('Human vs Computer selected.'), nl,
     get_player_name('Your', Name1),
-    get_ai_level(Level,'CPU').
+    get_ai_level('CPU', Level).
 
-configure_game(3, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
+configure_game(3, Size, config('CPU', Name, Level, _, Size)) :- 
+    write('Computer vs Human selected.'), nl,
+    get_ai_level('CPU', Level),
+    get_player_name('Your', Name).
+
+configure_game(4, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
     write('Computer vs Computer selected.'), nl,
-    get_ai_level(Level1, 'CPU1'),
-    get_ai_level(Level2, 'CPU2').
+    get_ai_level('CPU1', Level1),
+    get_ai_level('CPU2', Level2).
 
-% Prompts for player name
+% get_player_name(+PlayerLabel, -Name)
+% Asks for player name and validates it
 get_player_name(PlayerLabel, Name) :-
     format('Enter name for ~w: ', [PlayerLabel]),
-    catch(read(Input), error(syntax_error(_), _), fail),
-    (   atom(Input), valid_name(Input)
-    ->  Name = Input
-    ;   write('Invalid name! Please enter a name using only letters and ensure it does not exceed 16 characters.'), nl,
-        get_player_name(PlayerLabel, Name)
-    ).
+    catch(read(Name), error(syntax_error(_), _), fail),
+    valid_name(Name).
 
-% Prompts for AI difficulty
-get_ai_level(Level, Label) :-
-    ( var(Label) -> format('Choose computer difficulty (1: Easy, 2: Hard): ', []);
-      format('Choose difficulty for ~w (1: Easy, 2: Hard): ', [Label])
-    ),
+% get_ai_level(+CPUName, -Level)
+% Asks for AI difficulty
+get_ai_level(CPUName, Level) :-
+    format('Choose difficulty for ~w (1: Easy, 2: Hard): ', [CPUName]),
     catch(read(Input), error(syntax_error(_), _), fail),
-    (   integer(Input), member(Input, [1, 2])
-    ->  Level = Input
-    ;   write('Invalid difficulty! Please choose 1 or 2.'), nl,
-        get_ai_level(Level, Label)
-    ).
+    validate_difficulty(CPUName, Input, Level).
+
+% validate_difficulty(+CPUName, +Input, -Level)
+% Validates AI difficulty input
+validate_difficulty(_, 1, 1).
+validate_difficulty(_, 2, 2).
+validate_difficulty(CPUName, _, _) :-
+    write('Invalid difficulty! Please choose 1 or 2.'), nl,
+    get_ai_level(CPUName, Level).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game State Initialization
@@ -543,7 +570,3 @@ handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, Co
      % Replace 1 with AI level if needed
     move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), Move, NewGameState),
     format('Computer chose move: ~w~n', [Move]).
-
-% Placeholder predicates for required logic (to be implemented):
-% evaluate_board/3
-% random_move/2, greedy_move/2
