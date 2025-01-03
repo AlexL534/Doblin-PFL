@@ -18,14 +18,28 @@ play :-
 main_menu :-
     write('Welcome to Doblin!'), nl,
     get_grid_size(Size),
+    display_menu,
+    get_menu_choice(Choice, Size),
+    validate_choice(Choice, Size).
+
+% display_menu/0
+% Displays the available options in the menu
+display_menu :-
     write('1. Human vs Human'), nl,
     write('2. Human vs Computer'), nl,
     write('3. Computer vs Human'), nl,
     write('4. Computer vs Computer'), nl,
     write('5. Quit'), nl,
-    write('Choose an option: '), nl,
-    catch(read(Choice), error(syntax_error(_), _), fail),
-    validate_choice(Choice, Size).
+    write('Choose an option: '), nl.
+
+% get_menu_choice(+Choice, +Size)
+% Reads the user menu choice and handles invalid input using repeat
+get_menu_choice(Choice, Size) :-
+    repeat,
+    catch(read(Choice), error(syntax_error(_), _), fail),  % Catch invalid input
+    integer(Choice),
+    (Choice >= 1, Choice =< 5, ! ;  % Valid choice, stop repeat
+    write('Invalid option! Please try again.'), nl).  % Invalid choice, retry
 
 % validate_choice(+Choice, +Size)
 % Validates the menu choice and handles it
@@ -53,7 +67,8 @@ validate_choice(_) :-
 % Asks for and validates grid size
 get_grid_size(Size) :-
     write('Choose grid size (between 6 and 9): '),
-    read(Input),
+    repeat,
+    catch(read(Input), error(syntax_error(_), _), fail),
     valid_grid_size(Input, Size).
 
 % valid_grid_size(+Input, -Size)
@@ -64,9 +79,9 @@ valid_grid_size(Input, Size) :-
     Input =< 9,
     Size = Input.
 
-valid_grid_size(_, Size) :-
+valid_grid_size(_) :-
     write('Invalid grid size! Please choose a size between 6 and 9.'), nl,
-    get_grid_size(Size).
+    get_grid_size(_).
 
 % valid_name(+Name)
 % Ensures name does not exceed 16 characters and is not 'CPU'
@@ -259,18 +274,18 @@ print_row([Cell|Rest]) :-
 
 display_quit_message(Player) :-
     format('~w has quit the game. Thanks for playing!', [Player]), nl,
-    write('==========================================='), nl,
+    write('-------------------------------------------'), nl,
     write('      [INFO] Player Abandonment Detected!  '), nl,
-    write('==========================================='), nl.
+    write('-------------------------------------------'), nl.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Move Execution and Validation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Utility to find the index of an element in a list.
-index_of([Element|_], Element, 1).  % The element is found at the first position.
+index_of([Element|_], Element, 1). 
 index_of([_|Tail], Element, Index) :- 
-    index_of(Tail, Element, Index1),  % Recursively look for the element
-    Index is Index1 + 1.              % Increment the index as we move through the list
+    index_of(Tail, Element, Index1),  
+    Index is Index1 + 1.              
 
 reverseMapping(Mapping, ReverseMapping) :-
     length(Mapping, Size),
