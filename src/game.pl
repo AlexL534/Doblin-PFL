@@ -354,8 +354,8 @@ letter_to_index(i, 9).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Counts how many lines of 4 or squares a player has in their own grid
-calculate_points(Grid, Player, Points) :-
-    (Player = player1 -> Symbol = 'X '; Symbol = 'O '),
+calculate_points(Grid, Player,Player1, Points) :-
+    (Player = Player1 -> Symbol = 'X '; Symbol = 'O '),
     findall(_, horizontal_lines(Grid, Symbol), Horizontal),
     findall(_, vertical_lines(Grid, Symbol), Vertical),
     findall(_, diagonal_lines(Grid, Symbol), Diagonals),
@@ -472,8 +472,8 @@ game_over(game_state(Grid1, Grid2, _, _, _, _, _), Winner) :-
     length(Moves2,Lmoves2),
     % No valid moves left for both players
     (   Lmoves1 == 0, Lmoves2 == 0 -> 
-        calculate_points(Grid1, player1, Points1),
-        calculate_points(Grid2, player2, Points2),
+        calculate_points(Grid1, player1,player1, Points1),
+        calculate_points(Grid2, player2,player1, Points2),
         (   Points1 == Points2 -> Winner = draw;
             (   Points1 < Points2 -> Winner = player1;
                 Winner = player2
@@ -491,28 +491,28 @@ random_move(Grid,Move) :-
         valid_moves(Grid, ListOfMoves),
         random_member(Move, ListOfMoves).
 
-get_best_move(_,_,_,_,[],Move,Move) :-!.
-get_best_move(Grid,Points,Difference,Player,[Move|ListOfMoves],CurrentBest,BestMove) :-
+get_best_move(_,_,_,_,_,[],Move,Move) :-!.
+get_best_move(Grid,Points,Difference,Player,Player1,[Move|ListOfMoves],CurrentBest,BestMove) :-
     Move = move(Row,ColLetter),
     atom(ColLetter),
     letter_to_index(ColLetter,Col),
-    (Player = player1 -> update_grid(Grid,Row,Col,'X ',NewGrid);update_grid(Grid,Row,Col,'O ',NewGrid)),
-    calculate_points(NewGrid,Player,UpdatedPoints),
+    (Player = Player1 -> update_grid(Grid,Row,Col,'X ',NewGrid);update_grid(Grid,Row,Col,'O ',NewGrid)),
+    calculate_points(NewGrid,Player,Player1,UpdatedPoints),
     NewDifference is UpdatedPoints-Points,
     (NewDifference =< Difference  ->
-     get_best_move(Grid,Points,NewDifference,Player,ListOfMoves,Move,BestMove);
-     get_best_move(Grid,Points,Difference,Player,ListOfMoves,CurrentBest,BestMove)).
+     get_best_move(Grid,Points,NewDifference,Player,Player1,ListOfMoves,Move,BestMove);
+     get_best_move(Grid,Points,Difference,Player,Player1,ListOfMoves,CurrentBest,BestMove)).
 
-greedy_move(Grid,Player,Move) :-
+greedy_move(Grid,Player,Player1,Move) :-
     valid_moves(Grid,ListOfMoves),
     write(ListOfMoves),nl,
-    calculate_points(Grid,Player,Points),
-    get_best_move(Grid,Points,999,Player,ListOfMoves,move(-1,-1),Move).
+    calculate_points(Grid,Player,Player1,Points),
+    get_best_move(Grid,Points,999,Player,Player1,ListOfMoves,move(-1,-1),Move).
         
 % Chooses a move for the computer player based on difficulty level (level 1 should return a random valid move and level 2 the best play with a greedy algorithm)
-choose_move(Grid, Level, Player, Move) :-
+choose_move(Grid, Level, Player, Player1, Move) :-
     (Level = 1 -> random_move(Grid, Move),!;
-     Level = 2 -> greedy_move(Grid,Player, Move)).
+     Level = 2 -> greedy_move(Grid,Player,Player1, Move)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Loop
@@ -565,8 +565,8 @@ handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, Co
 % Handles a computer player turn
 handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, NewGameState) :-
     write('Computer is thinking...'), nl,
-    (CurrentPlayer == Player1 -> choose_move(Grid1, 1, Move),write('Used grid1'),nl;
-     choose_move(Grid2, 1, Move),write('Used grid2'),nl),
+    (CurrentPlayer == Player1 -> choose_move(Grid1, 2, CurrentPlayer,Player1, Move),write('Used grid1'),nl;
+     choose_move(Grid2, 2, CurrentPlayer, Player1, Move),write('Used grid2'),nl),
      % Replace 1 with AI level if needed
     move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping), Move, NewGameState),
     format('Computer chose move: ~w~n', [Move]).
