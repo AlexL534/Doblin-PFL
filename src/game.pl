@@ -86,7 +86,7 @@ valid_grid_size(_) :-
 % valid_name(+Name)
 % Ensures name does not exceed 16 characters and is not 'CPU'
 valid_name(Name) :-
-    Name \== 'CPU',
+    Name \= 'CPU',
     atom_length(Name, Length),
     Length =< 16. 
 
@@ -317,7 +317,7 @@ move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMa
             validate_move(Grid1, move(Row, Col)),
             NextPlayer = Player2,
             place_symbol_player1('X ', Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2);
-        (Player2 \== 'CPU' , Player2 \== 'CPU2' -> translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol);TranslatedRow is Row,TranslatedCol is Col),
+        (Player2 \= 'CPU' , Player2 \= 'CPU2' -> translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol);TranslatedRow is Row,TranslatedCol is Col),
         validate_move(Grid2, move(TranslatedRow, TranslatedCol)),
         NextPlayer = Player1,
         reverseMapping(RowMapping, ReverseRowMapping),
@@ -484,12 +484,12 @@ game_over(game_state(Grid1, Grid2, _, _, _, _, _, _, _), Winner) :-
     valid_moves(Grid2,Moves2),
     length(Moves2,Lmoves2),
     % No valid moves left for player 2 (he always does last move)
-    (   Lmoves2 == 0 -> 
+    (   Lmoves2 = 0 -> 
         calculate_points(Grid1, player1,player1, Points1),
         calculate_points(Grid2, player2,player1, Points2),
         format('Player 1 (X) Points: ~w~n', [Points1]),
         format('Player 2 (O) Points: ~w~n', [Points2]),
-        (   Points1 == Points2 -> Winner = draw;
+        (   Points1 = Points2 -> Winner = draw;
             (   Points1 < Points2 -> Winner = player1;
                 Winner = player2
             )
@@ -556,7 +556,7 @@ announce_winner(Winner) :-
 % Handles current player turn
 current_player_turn(GameState, NewGameState) :-
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
-    (CurrentPlayer \== 'CPU', CurrentPlayer \== 'CPU1', CurrentPlayer \== 'CPU2' ->
+    (CurrentPlayer \= 'CPU', CurrentPlayer \= 'CPU1', CurrentPlayer \= 'CPU2' ->
         handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState);
         handle_computer_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState)).
 
