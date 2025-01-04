@@ -325,7 +325,7 @@ handle_player_move(CurrentPlayer, Player1, Row, Col, Grid1, Grid2, RowMapping, C
     CurrentPlayer = Player1,
     validate_move(Grid1, move(Row, Col)),
     NextPlayer = Player2,
-    place_symbol_player1('X ', Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2).
+    place_symbol('X ', Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2).
 
 % Handles Player 2 move
 handle_player_move(CurrentPlayer, Player1, Row, Col, Grid1, Grid2, RowMapping, ColMapping, NewGrid1, NewGrid2, NextPlayer, Player2, TranslatedRow, TranslatedCol) :-
@@ -335,7 +335,7 @@ handle_player_move(CurrentPlayer, Player1, Row, Col, Grid1, Grid2, RowMapping, C
     NextPlayer = Player1,
     reverseMapping(RowMapping, ReverseRowMapping),
     reverseMapping(ColMapping, ReverseColMapping),
-    place_symbol_player2('O ', Grid2, Grid1, TranslatedRow, TranslatedCol, ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1).
+    place_symbol('O ', Grid2, Grid1, TranslatedRow, TranslatedCol, ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1).
 
 % Handles translation of coordinates for Player 2 depending on whether they are a CPU or human
 handle_player2_coordinates(Player2, Row, Col, _RowMapping, _ColMapping, TranslatedRow, TranslatedCol) :-
@@ -352,16 +352,11 @@ handle_player2_coordinates(_, Row, Col, RowMapping, ColMapping, TranslatedRow, T
     translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol).
 
 % Places a symbol on both grids according to the mappings.
-place_symbol_player1(Symbol, Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
+place_symbol(Symbol, Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
     update_grid(Grid1, Row, Col, Symbol, NewGrid1),
     translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
     update_grid(Grid2, TranslatedRow, TranslatedCol, Symbol, NewGrid2).
 
-place_symbol_player2(Symbol, Grid1, Grid2, Row, Col, RowMappingForGrid2, ColMappingForGrid2, NewGrid1, NewGrid2) :-
-    
-    update_grid(Grid1, Row, Col, Symbol, NewGrid1),
-    translate_coordinates(Row, Col, RowMappingForGrid2, ColMappingForGrid2, TranslatedRow, TranslatedCol),
-    update_grid(Grid2, TranslatedRow, TranslatedCol, Symbol, NewGrid2).
 
 % Updates a specific cell in a grid.
 update_grid(Grid, Row, Col, Symbol, NewGrid) :-
@@ -371,7 +366,7 @@ update_grid(Grid, Row, Col, Symbol, NewGrid) :-
     nth1(Row, Grid, _, TempGrid),
     nth1(Row, NewGrid, NewRow, TempGrid).
 
-% Translates coordinates for the second grid.
+% Translates coordinates for grid1 or grid2 depending on the provided mapping.
 translate_coordinates(Row, Col, RowMapping, ColMapping, NewRow, NewCol) :-
     index_of(RowMapping, Row, NewRowIndex), 
     index_of(ColMapping, Col, NewColIndex), 
@@ -504,6 +499,7 @@ valid_moves(Grid1, ListOfMoves) :-
         ), 
         ListOfMoves).
 
+% translates a column number to its respective letter 
 col_to_atom(Col, Letter) :-
     Letters = [a, b, c, d, e, f, g, h, i],
     nth1(Col, Letters, Letter).
@@ -539,19 +535,19 @@ random_move(Grid,Move) :-
     valid_moves(Grid, ListOfMoves),
     random_member(Move, ListOfMoves).
 
-
+% when there are no more moves returns the best one it found
 get_best_move(_,_,_,_,_,[],Move,Move) :-!.
 get_best_move(Grid,Points,Difference,Player,Player1,[Move|ListOfMoves],CurrentBest,BestMove) :-
     Move = move(Row,ColLetter),
     atom(ColLetter),
     letter_to_index(ColLetter,Col),
     get_symbol(Player, Player1, Symbol),
-    update_grid(Grid, Row, Col, Symbol, NewGrid),
-    calculate_points(NewGrid,Player,Player1,UpdatedPoints),
-    NewDifference is UpdatedPoints-Points,
+    update_grid(Grid, Row, Col, Symbol, NewGrid), % simulates the move
+    calculate_points(NewGrid,Player,Player1,UpdatedPoints), % calculates the amount of points the player gets when that move is played
+    NewDifference is UpdatedPoints-Points, % calculates amout of points gained
     compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, Move, BestMove, CurrentBest).
     
-% Compares best moves
+% checks if Move makes less points than CurrentBest if yes it updates CurrentBest otherwise keeps searching until list of moves is empty
 compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, Move, BestMove, _) :-
     NewDifference =< Difference,
     get_best_move(Grid, Points, NewDifference, Player, Player1, ListOfMoves, Move, BestMove).
@@ -560,6 +556,7 @@ compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, List
     NewDifference > Difference,
     get_best_move(Grid, Points, Difference, Player, Player1, ListOfMoves, CurrentBest, BestMove).
 
+% uses the get_best_move predicate to find the move that makes less points in each turn
 greedy_move(Grid,Player,Player1,Move) :-
     valid_moves(Grid,ListOfMoves),
     calculate_points(Grid,Player,Player1,Points),
@@ -664,12 +661,13 @@ handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, Co
 handle_computer_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
     CurrentPlayer = Player2,
      choose_move(Grid2, AI2Level, CurrentPlayer, Player1, Move),
-     % Replace 1 with AI level if needed
     move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), Move, NewGameState),
+    % operations required to display the move with the grid2 coordinates
     Move = move(Row,ColLetter),
     letter_to_index(ColLetter,Col),
     reverseMapping(RowMapping,RRowMapping),
     reverseMapping(ColMapping,RColMapping),
     translate_coordinates(Row,Col,RRowMapping,RColMapping,TranslatedRow,TranslatedCol),
     col_to_atom(TranslatedCol,TranslatedColLetter),
+    
     format('Computer chose move: move(~d,~w)~n', [TranslatedRow,TranslatedColLetter]).
