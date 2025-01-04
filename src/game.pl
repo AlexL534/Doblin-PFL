@@ -36,10 +36,13 @@ display_menu :-
 % Reads the user menu choice and handles invalid input using repeat
 get_menu_choice(Choice, Size) :-
     repeat,
-    catch(read(Choice), error(syntax_error(_), _), fail),  % Catch invalid input
+    catch(read(Choice), error(syntax_error(_), _), fail),
     integer(Choice),
-    (Choice >= 1, Choice =< 5, ! ;  % Valid choice, stop repeat
-    write('Invalid option! Please try again.'), nl).  % Invalid choice, retry
+    (   Choice >= 1,
+        Choice =< 5
+    ),
+    !,
+    true.
 
 % validate_choice(+Choice, +Size)
 % Validates the menu choice and handles it
@@ -101,13 +104,13 @@ configure_game(1, Size, config(Name1, Name2, _, _, Size)) :-
 
 configure_game(2, Size, config(Name1, 'CPU', _, Level, Size)) :- 
     write('Human vs Computer selected.'), nl,
-    get_player_name('Your', Name1),
+    get_player_name('Player 1', Name1),
     get_ai_level('CPU', Level).
 
 configure_game(3, Size, config('CPU', Name, Level, _, Size)) :- 
     write('Computer vs Human selected.'), nl,
     get_ai_level('CPU', Level),
-    get_player_name('Your', Name).
+    get_player_name('Player 2', Name).
 
 configure_game(4, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
     write('Computer vs Computer selected.'), nl,
@@ -347,7 +350,12 @@ handle_player_move(CurrentPlayer, Player1, Row, Col, Grid1, Grid2, RowMapping, C
 
 % Handles translation of coordinates for Player 2 depending on whether they are a CPU or human
 handle_player2_coordinates(Player2, Row, Col, _RowMapping, _ColMapping, TranslatedRow, TranslatedCol) :-
-    (Player2 = 'CPU' ; Player2 = 'CPU2'),
+    Player2 = 'CPU',
+    TranslatedRow = Row,
+    TranslatedCol = Col.
+
+handle_player2_coordinates(Player2, Row, Col, _RowMapping, _ColMapping, TranslatedRow, TranslatedCol) :-
+    Player2 = 'CPU2',
     TranslatedRow = Row,
     TranslatedCol = Col.
 
@@ -623,9 +631,19 @@ handle_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMappin
     CurrentPlayer \= 'CPU2',
     handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
 
-% Handle computer turn otherwise
+% Handle computer turn otherwise for 'CPU'
 handle_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
-    (CurrentPlayer = 'CPU'; CurrentPlayer = 'CPU1'; CurrentPlayer = 'CPU2'),
+    CurrentPlayer = 'CPU',
+    handle_computer_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
+
+% Handle computer turn otherwise for 'CPU1'
+handle_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
+    CurrentPlayer = 'CPU1',
+    handle_computer_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
+
+% Handle computer turn otherwise for 'CPU2'
+handle_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
+    CurrentPlayer = 'CPU2',
     handle_computer_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
 
 % Handles a human player turn
@@ -652,13 +670,13 @@ handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, Co
     move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), Move, NewGameState),
     format('Computer chose move: ~w~n', [Move]).
 
-handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
+handle_computer_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
     CurrentPlayer = Player2,
      choose_move(Grid2, AI2Level, CurrentPlayer, Player1, Move),
      % Replace 1 with AI level if needed
     move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), Move, NewGameState),
-    Move = move(Row,ColLtter),
-    letter_to_index(ColLtter,Col),
+    Move = move(Row,ColLetter),
+    letter_to_index(ColLetter,Col),
     reverseMapping(RowMapping,RRowMapping),
     reverseMapping(ColMapping,RColMapping),
     translate_coordinates(Row,Col,RRowMapping,RColMapping,TranslatedRow,TranslatedCol),
