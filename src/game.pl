@@ -545,20 +545,12 @@ get_best_move(Grid,Points,Difference,Player,Player1,[Move|ListOfMoves],CurrentBe
     Move = move(Row,ColLetter),
     atom(ColLetter),
     letter_to_index(ColLetter,Col),
-    (Player = Player1, update_grid(Grid, Row, Col, 'X ', NewGrid), Symbol = 'X '),
-    (Player \= Player1, update_grid(Grid, Row, Col, 'O ', NewGrid), Symbol = 'O '),
+    (Player = Player1 -> update_grid(Grid,Row,Col,'X ',NewGrid);update_grid(Grid,Row,Col,'O ',NewGrid)),
     calculate_points(NewGrid,Player,Player1,UpdatedPoints),
     NewDifference is UpdatedPoints-Points,
-    compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, Move, BestMove, CurrentBest).
-
-% Compares best moves
-compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, Move, BestMove, CurrentBest) :-
-    NewDifference =< Difference,
-    get_best_move(Grid, Points, NewDifference, Player, Player1, ListOfMoves, Move, BestMove).
-
-compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, Move, BestMove, CurrentBest) :-
-    NewDifference > Difference,
-    get_best_move(Grid, Points, Difference, Player, Player1, ListOfMoves, CurrentBest, BestMove).
+    (NewDifference =< Difference  ->
+     get_best_move(Grid,Points,NewDifference,Player,Player1,ListOfMoves,Move,BestMove);
+     get_best_move(Grid,Points,Difference,Player,Player1,ListOfMoves,CurrentBest,BestMove)).
 
 greedy_move(Grid,Player,Player1,Move) :-
     valid_moves(Grid,ListOfMoves),
