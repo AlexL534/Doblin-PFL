@@ -174,7 +174,7 @@ generate_mappings(Size, RowMapping, ColMapping) :-
 % Display the current game state
 display_game(game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping,_,_)) :-
     length(Grid1, Size),
-    write('Grids:'), nl,
+    nl,
     Width is Size * 3 - 2,
     print_player_names(Name1, Width, 2),
     print_player_names(Name2, Width, Width + 7), nl,  
@@ -542,17 +542,27 @@ random_move(Grid,Move) :-
     valid_moves(Grid, ListOfMoves),
     random_member(Move, ListOfMoves).
 
+get_symbol(Player, Player1, 'X ') :- Player = Player1.
+get_symbol(Player, Player1, 'O ') :- Player \= Player1.
+
 get_best_move(_,_,_,_,_,[],Move,Move) :-!.
 get_best_move(Grid,Points,Difference,Player,Player1,[Move|ListOfMoves],CurrentBest,BestMove) :-
     Move = move(Row,ColLetter),
     atom(ColLetter),
     letter_to_index(ColLetter,Col),
-    (Player = Player1 -> update_grid(Grid,Row,Col,'X ',NewGrid);update_grid(Grid,Row,Col,'O ',NewGrid)),
+    get_symbol(Player, Player1, Symbol),
+    update_grid(Grid, Row, Col, Symbol, NewGrid),
     calculate_points(NewGrid,Player,Player1,UpdatedPoints),
     NewDifference is UpdatedPoints-Points,
-    (NewDifference =< Difference  ->
-     get_best_move(Grid,Points,NewDifference,Player,Player1,ListOfMoves,Move,BestMove);
-     get_best_move(Grid,Points,Difference,Player,Player1,ListOfMoves,CurrentBest,BestMove)).
+    compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, Move, BestMove, CurrentBest).
+    
+% Compares best moves
+compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, Move, BestMove, CurrentBest) :-
+    NewDifference =< Difference,
+    get_best_move(Grid, Points, NewDifference, Player, Player1, ListOfMoves, Move, BestMove).
+compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, Move, BestMove, CurrentBest) :-
+    NewDifference > Difference,
+    get_best_move(Grid, Points, Difference, Player, Player1, ListOfMoves, CurrentBest, BestMove).
 
 greedy_move(Grid,Player,Player1,Move) :-
     valid_moves(Grid,ListOfMoves),
