@@ -299,6 +299,7 @@ index_of([_|Tail], Element, Index) :-
     index_of(Tail, Element, Index1),  
     Index is Index1 + 1.              
 
+%function that receives a mapping that translates coordinates from grid1 to grid2 and generates a mapping to to the oposite
 reverseMapping(Mapping, ReverseMapping) :-
     length(Mapping, Size),
     numlist(1, Size, InitialReverseMapping),
@@ -345,14 +346,13 @@ handle_player_move(CurrentPlayer, Player1, Row, Col, Grid1, Grid2, RowMapping, C
     place_symbol_player2('O ', Grid2, Grid1, TranslatedRow, TranslatedCol, ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1).
 
 % Handles translation of coordinates for Player 2 depending on whether they are a CPU or human
-handle_player2_coordinates(Player2, Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol) :-
+handle_player2_coordinates(Player2, Row, Col, _RowMapping, _ColMapping, TranslatedRow, TranslatedCol) :-
     (Player2 = 'CPU' ; Player2 = 'CPU2'),
     TranslatedRow = Row,
     TranslatedCol = Col.
 
-handle_player2_coordinates(_, Row, Col, _RowMapping, _ColMapping, TranslatedRow, TranslatedCol) :-
-    TranslatedRow = Row,
-    TranslatedCol = Col.
+handle_player2_coordinates(_, Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol) :-
+    translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol).
 
 % Places a symbol on both grids according to the mappings.
 place_symbol_player1(Symbol, Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
