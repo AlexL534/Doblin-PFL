@@ -542,8 +542,6 @@ random_move(Grid,Move) :-
     valid_moves(Grid, ListOfMoves),
     random_member(Move, ListOfMoves).
 
-get_symbol(Player, Player1, 'X ') :- Player = Player1.
-get_symbol(Player, Player1, 'O ') :- Player \= Player1.
 
 get_best_move(_,_,_,_,_,[],Move,Move) :-!.
 get_best_move(Grid,Points,Difference,Player,Player1,[Move|ListOfMoves],CurrentBest,BestMove) :-
@@ -595,10 +593,11 @@ game_loop(GameState) :-
     ).
 
 announce_winner(Winner) :-
-    (Winner = draw->  
-        write('The game ended in a draw!'), nl;
-        format('Congratulations, ~w! You Won!', [Winner]), nl
-    ).
+    Winner = draw,
+    write('The game ended in a draw!'), nl.
+
+announce_winner(Winner) :-
+        format('Congratulations, ~w! You Won!', [Winner]), nl.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Player Turn Logic
