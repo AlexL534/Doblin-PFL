@@ -396,10 +396,7 @@ letter_to_index(i, 9).
 
 % Counts how many lines of 4 or squares a player has in their own grid
 calculate_points(Grid, Player, Player1, Points) :-
-    (Player = Player1,
-     Symbol = 'X '),
-    (Player \= Player1,
-     Symbol = 'O '),
+    get_symbol(Player, Player1, Symbol),
     findall(_, horizontal_lines(Grid, Symbol), Horizontal),
     findall(_, vertical_lines(Grid, Symbol), Vertical),
     findall(_, diagonal_lines(Grid, Symbol), Diagonals),
@@ -409,6 +406,10 @@ calculate_points(Grid, Player, Player1, Points) :-
     length(Diagonals, DiagonalCount),
     length(Squares, SquareCount),
     Points is HorizontalCount + VerticalCount + DiagonalCount + SquareCount.
+
+% Assigns the correct symbol based on the player
+get_symbol(Player, Player1, 'X ') :- Player = Player1.
+get_symbol(Player, Player1, 'O ') :- Player \= Player1.
 
 % Finds all horizontal lines of length 4 of a certain symbol
 horizontal_lines(Grid, Symbol) :-
@@ -622,8 +623,8 @@ handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, Co
 
 % Handles a computer player turn
 handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
-    (CurrentPlayer = Player1 -> choose_move(Grid1, AI1Level, CurrentPlayer,Player1, Move),write('Used grid1'),nl;
-     choose_move(Grid2, AI2Level, CurrentPlayer, Player1, Move),write('Used grid2'),nl),
+    (CurrentPlayer = Player1 -> choose_move(Grid1, AI1Level, CurrentPlayer,Player1, Move);
+     choose_move(Grid2, AI2Level, CurrentPlayer, Player1, Move)),
      % Replace 1 with AI level if needed
     move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), Move, NewGameState),
     format('Computer chose move: ~w~n', [Move]).
