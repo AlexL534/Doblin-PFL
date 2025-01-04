@@ -19,7 +19,7 @@ main_menu :-
     write('Welcome to Doblin!'), nl,
     get_grid_size(Size),
     display_menu,
-    get_menu_choice(Choice, Size),
+    get_menu_choice(Choice),
     validate_choice(Choice, Size).
 
 % display_menu/0
@@ -32,17 +32,16 @@ display_menu :-
     write('5. Quit'), nl,
     write('Choose an option: '), nl.
 
-% get_menu_choice(+Choice, +Size)
-% Reads the user menu choice and handles invalid input using repeat
-get_menu_choice(Choice, Size) :-
+% get_menu_choice(+Choice)
+% Reads the user menu choice and handles invalid inputs
+get_menu_choice(Choice) :-
     repeat,
     catch(read(Choice), error(syntax_error(_), _), fail),
     integer(Choice),
     (   Choice >= 1,
         Choice =< 5
     ),
-    !,
-    true.
+    !.
 
 % validate_choice(+Choice, +Size)
 % Validates the menu choice and handles it
@@ -135,7 +134,7 @@ get_ai_level(CPUName, Level) :-
 % Validates AI difficulty input
 validate_difficulty(_, 1, 1).
 validate_difficulty(_, 2, 2).
-validate_difficulty(CPUName, _, _) :-
+validate_difficulty(CPUName, _, Level) :-
     write('Invalid difficulty! Please choose 1 or 2.'), nl,
     get_ai_level(CPUName, Level).
 
@@ -174,7 +173,7 @@ generate_mappings(Size, RowMapping, ColMapping) :-
 % Game Display
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Display the current game state
+% Displays the current game state
 display_game(game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping,_,_)) :-
     length(Grid1, Size),
     nl,
@@ -186,12 +185,13 @@ display_game(game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, C
     nl,
     print_current_player(CurrentPlayer, Name1, Name2).
 
-print_current_player(CurrentPlayer, Name1, Name2) :-
+% Prints current player
+print_current_player(CurrentPlayer, Name1, _) :-
     CurrentPlayer = Name1,
     format('Current Player: ~w~n', [Name1]), nl,
     !.
 
-print_current_player(CurrentPlayer, Name1, Name2) :-
+print_current_player(CurrentPlayer, _, Name2) :-
     CurrentPlayer = Name2,
     format('Current Player: ~w~n', [Name2]), nl,
     !.
