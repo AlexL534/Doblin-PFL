@@ -87,6 +87,8 @@ valid_grid_size(_) :-
 % Ensures name does not exceed 16 characters and is not 'CPU'
 valid_name(Name) :-
     Name \= 'CPU',
+    Name \= 'CPU1',
+    Name \= 'CPU2',
     atom_length(Name, Length),
     Length =< 16. 
 
