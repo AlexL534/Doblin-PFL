@@ -57,10 +57,6 @@ validate_choice(Choice, Size) :-
     initial_state(GameConfig, InitialState),
     game_loop(InitialState).
 
-validate_choice(_) :-
-    write('Invalid option! Please try again.'), nl,
-    main_menu.
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Configuration
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -296,7 +292,7 @@ index_of([_|Tail], Element, Index) :-
     index_of(Tail, Element, Index1),  
     Index is Index1 + 1.              
 
-%function that receives a mapping that translates coordinates from grid1 to grid2 and generates a mapping to to the oposite
+% function that receives a mapping that translates coordinates from grid1 to grid2 and generates a mapping to to the oposite
 reverseMapping(Mapping, ReverseMapping) :-
     length(Mapping, Size),
     numlist(1, Size, InitialReverseMapping),
