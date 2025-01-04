@@ -329,7 +329,7 @@ handle_player_move(CurrentPlayer, Player1, Row, Col, Grid1, Grid2, RowMapping, C
     CurrentPlayer = Player1,
     validate_move(Grid1, move(Row, Col)),
     NextPlayer = Player2,
-    place_symbol_player1('X ', Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2).
+    place_symbol('X ', Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2).
 
 % Handles Player 2 move
 handle_player_move(CurrentPlayer, Player1, Row, Col, Grid1, Grid2, RowMapping, ColMapping, NewGrid1, NewGrid2, NextPlayer, Player2, TranslatedRow, TranslatedCol) :-
@@ -339,7 +339,7 @@ handle_player_move(CurrentPlayer, Player1, Row, Col, Grid1, Grid2, RowMapping, C
     NextPlayer = Player1,
     reverseMapping(RowMapping, ReverseRowMapping),
     reverseMapping(ColMapping, ReverseColMapping),
-    place_symbol_player2('O ', Grid2, Grid1, TranslatedRow, TranslatedCol, ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1).
+    place_symbol('O ', Grid2, Grid1, TranslatedRow, TranslatedCol, ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1).
 
 % Handles translation of coordinates for Player 2 depending on whether they are a CPU or human
 handle_player2_coordinates(Player2, Row, Col, _RowMapping, _ColMapping, TranslatedRow, TranslatedCol) :-
@@ -356,16 +356,11 @@ handle_player2_coordinates(_, Row, Col, RowMapping, ColMapping, TranslatedRow, T
     translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol).
 
 % Places a symbol on both grids according to the mappings.
-place_symbol_player1(Symbol, Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
+place_symbol(Symbol, Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
     update_grid(Grid1, Row, Col, Symbol, NewGrid1),
     translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
     update_grid(Grid2, TranslatedRow, TranslatedCol, Symbol, NewGrid2).
 
-place_symbol_player2(Symbol, Grid1, Grid2, Row, Col, RowMappingForGrid2, ColMappingForGrid2, NewGrid1, NewGrid2) :-
-    
-    update_grid(Grid1, Row, Col, Symbol, NewGrid1),
-    translate_coordinates(Row, Col, RowMappingForGrid2, ColMappingForGrid2, TranslatedRow, TranslatedCol),
-    update_grid(Grid2, TranslatedRow, TranslatedCol, Symbol, NewGrid2).
 
 % Updates a specific cell in a grid.
 update_grid(Grid, Row, Col, Symbol, NewGrid) :-
