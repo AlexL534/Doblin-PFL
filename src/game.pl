@@ -285,10 +285,11 @@ print_row([Cell|Rest]) :-
     print_row(Rest).
 
 display_quit_message(Player) :-
-    format('~w has quit the game. Thanks for playing!', [Player]), nl,
     write('-------------------------------------------'), nl,
     write('      [INFO] Player Abandonment Detected!  '), nl,
-    write('-------------------------------------------'), nl.
+    write('-------------------------------------------'), nl,
+    format('~w has quit the game. Thanks for playing!', [Player]), nl.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Move Execution and Validation
@@ -613,24 +614,36 @@ announce_winner(Winner) :-
 % Handles current player turn
 current_player_turn(GameState, NewGameState) :-
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
-    (CurrentPlayer \= 'CPU', CurrentPlayer \= 'CPU1', CurrentPlayer \= 'CPU2' ->
-        handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState);
-        handle_computer_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState)).
+    handle_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
+
+% Handle player turn if the current player is not a CPU
+handle_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
+    CurrentPlayer \= 'CPU',
+    CurrentPlayer \= 'CPU1',
+    CurrentPlayer \= 'CPU2',
+    handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
+
+% Handle computer turn otherwise
+handle_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
+    (CurrentPlayer = 'CPU'; CurrentPlayer = 'CPU1'; CurrentPlayer = 'CPU2'),
+    handle_computer_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
 
 % Handles a human player turn
 handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
     format('~w, it\'s your turn! Enter your move (Row,Col) or type "quit" to exit: ', [CurrentPlayer]),
     read(Input),
-    (   Input = quit ->
-        display_quit_message(CurrentPlayer),
-        NewGameState = quit;
-        (   Input = move(Row, Col),
-            (move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), move(Row, Col), NewGameState) -> true;
-            write('Invalid move! Try again.'), nl,
-            handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState))
-        )
-    ).
+    check_input(Input, Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
 
+check_input(quit, Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, quit) :-
+    display_quit_message(CurrentPlayer).
+
+check_input(move(Row, Col), Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
+    move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), move(Row, Col), NewGameState),
+    !.
+
+check_input(_, Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
+    write('Invalid move! Try again.'), nl,
+    handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
 % Handles a computer player turn
 handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
     CurrentPlayer = Player1,
