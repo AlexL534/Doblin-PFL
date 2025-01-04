@@ -183,18 +183,11 @@ display_game(game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, C
     print_column_labels(Size, ColMapping), 
     print_side_by_side(Grid1, Grid2, RowMapping),
     nl,
-    print_current_player(CurrentPlayer, Name1, Name2).
+    print_current_player(CurrentPlayer).
 
 % Prints current player
-print_current_player(CurrentPlayer, Name1, _) :-
-    CurrentPlayer = Name1,
-    format('Current Player: ~w~n', [Name1]), nl,
-    !.
-
-print_current_player(CurrentPlayer, _, Name2) :-
-    CurrentPlayer = Name2,
-    format('Current Player: ~w~n', [Name2]), nl,
-    !.
+print_current_player(CurrentPlayer) :-
+    format('Current Player: ~w~n', [CurrentPlayer]).
 
 print_player_names(Name, Width, Offset) :-
     atom(Name),  % Ensure Name is an atom
@@ -326,13 +319,13 @@ validate_move(Grid1, move(Row, Col)) :-
     Symbol = '_ '.
 
 % Executes a move if valid and updates the game state.
-move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping,AI1Level,AI2Level), move(Row, ColLetter), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping,AI1Level,AI2Level)) :-
+move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), move(Row, ColLetter), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level)) :-
     atom(ColLetter),
     letter_to_index(ColLetter, Col),
-    handle_player_move(CurrentPlayer, Player1, Row, Col, Grid1, Grid2, RowMapping, ColMapping, NewGrid1, NewGrid2, NextPlayer, Player2, TranslatedRow, TranslatedCol).
+    handle_player_move(CurrentPlayer, Player1, Row, Col, Grid1, Grid2, RowMapping, ColMapping, NewGrid1, NewGrid2, NextPlayer, Player2, _, _).
 
 % Handles Player 1 move
-handle_player_move(CurrentPlayer, Player1, Row, Col, Grid1, Grid2, RowMapping, ColMapping, NewGrid1, NewGrid2, NextPlayer, Player2, TranslatedRow, TranslatedCol) :-
+handle_player_move(CurrentPlayer, Player1, Row, Col, Grid1, Grid2, RowMapping, ColMapping, NewGrid1, NewGrid2, NextPlayer, Player2, _, _) :-
     CurrentPlayer = Player1,
     validate_move(Grid1, move(Row, Col)),
     NextPlayer = Player2,
