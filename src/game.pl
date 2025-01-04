@@ -564,6 +564,7 @@ choose_move(Grid, Level, Player, Player1, Move) :-
     Level = 2,
     greedy_move(Grid,Player,Player1, Move).
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Loop
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -574,8 +575,7 @@ game_loop(GameState) :-
     (game_over(GameState, Winner) ->
         announce_winner(Winner),!;
         current_player_turn(GameState, NewGameState),
-        (   NewGameState = quit ->
-            write('Game exited by the player. Goodbye!'), nl;
+        (   NewGameState = quit -> true;
             game_loop(NewGameState)
         )
     ).
@@ -600,7 +600,7 @@ current_player_turn(GameState, NewGameState) :-
 % Handles a human player turn
 handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
     format('~w, it\'s your turn! Enter your move (Row,Col) or type "quit" to exit: ', [CurrentPlayer]),
-    catch(read(Input), error(syntax_error(_), _), fail),
+    read(Input),
     (   Input = quit ->
         display_quit_message(CurrentPlayer),
         NewGameState = quit;
