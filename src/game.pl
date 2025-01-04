@@ -556,10 +556,11 @@ get_best_move(Grid,Points,Difference,Player,Player1,[Move|ListOfMoves],CurrentBe
     compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, Move, BestMove, CurrentBest).
     
 % Compares best moves
-compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, Move, BestMove, CurrentBest) :-
+compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, Move, BestMove, _) :-
     NewDifference =< Difference,
     get_best_move(Grid, Points, NewDifference, Player, Player1, ListOfMoves, Move, BestMove).
-compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, Move, BestMove, CurrentBest) :-
+
+compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, _, BestMove, CurrentBest) :-
     NewDifference > Difference,
     get_best_move(Grid, Points, Difference, Player, Player1, ListOfMoves, CurrentBest, BestMove).
 
@@ -569,7 +570,7 @@ greedy_move(Grid,Player,Player1,Move) :-
     get_best_move(Grid,Points,999,Player,Player1,ListOfMoves,move(-1,-1),Move).
         
 % Chooses a move for the computer player based on difficulty level (level 1 should return a random valid move and level 2 the best play with a greedy algorithm)
-choose_move(Grid, Level, Player, Player1, Move) :-
+choose_move(Grid, Level, _, _, Move) :-
     Level = 1,
     random_move(Grid, Move).
 
@@ -645,7 +646,7 @@ handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, Co
     read(Input),
     check_input(Input, Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
 
-check_input(quit, Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, quit) :-
+check_input(quit, _, _, CurrentPlayer, _, _, _, _, _, _, quit) :-
     display_quit_message(CurrentPlayer).
 
 check_input(move(Row, Col), Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
@@ -655,6 +656,7 @@ check_input(move(Row, Col), Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMa
 check_input(_, Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
     write('Invalid move! Try again.'), nl,
     handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
+    
 % Handles a computer player turn
 handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
     CurrentPlayer = Player1,
