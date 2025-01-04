@@ -617,8 +617,21 @@ handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, Co
 
 % Handles a computer player turn
 handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
-    (CurrentPlayer = Player1 -> choose_move(Grid1, AI1Level, CurrentPlayer,Player1, Move);
-     choose_move(Grid2, AI2Level, CurrentPlayer, Player1, Move)),
+    CurrentPlayer = Player1,
+     choose_move(Grid1, AI1Level, CurrentPlayer,Player1, Move),
      % Replace 1 with AI level if needed
     move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), Move, NewGameState),
     format('Computer chose move: ~w~n', [Move]).
+
+handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
+    CurrentPlayer = Player2,
+     choose_move(Grid2, AI2Level, CurrentPlayer, Player1, Move),
+     % Replace 1 with AI level if needed
+    move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), Move, NewGameState),
+    Move = move(Row,ColLtter),
+    letter_to_index(ColLtter,Col),
+    reverseMapping(RowMapping,RRowMapping),
+    reverseMapping(ColMapping,RColMapping),
+    translate_coordinates(Row,Col,RRowMapping,RColMapping,TranslatedRow,TranslatedCol),
+    col_to_atom(TranslatedCol,TranslatedColLetter),
+    format('Computer chose move: move(~d,~w)~n', [TranslatedRow,TranslatedColLetter]).
