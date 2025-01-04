@@ -182,10 +182,14 @@ display_game(game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, C
     print_current_player(CurrentPlayer, Name1, Name2).
 
 print_current_player(CurrentPlayer, Name1, Name2) :-
-    (   CurrentPlayer = Name1
-    ->  format('Current Player: ~w~n', [Name1]) 
-    ;   format('Current Player: ~w~n', [Name2]) 
-    ).
+    CurrentPlayer = Name1,
+    format('Current Player: ~w~n', [Name1]),
+    !.
+
+print_current_player(CurrentPlayer, Name1, Name2) :-
+    CurrentPlayer = Name2,
+    format('Current Player: ~w~n', [Name2]),
+    !.
 
 print_player_names(Name, Width, Offset) :-
     atom(Name),  % Ensure Name is an atom
@@ -225,15 +229,21 @@ generate_column_label(Index, Label) :-
     Quotient is (Index - 1) // Base,
     Remainder is (Index - 1) mod Base,
     char_code('a', A),
-    (   Quotient =:= 0
-    ->  Code is A + Remainder,
-        char_code(Label, Code)
-    ;   FirstCode is A + Quotient - 1,
-        SecondCode is A + Remainder,
-        char_code(First, FirstCode),
-        char_code(Second, SecondCode),
-        atom_codes(Label, [First, Second])
-    ).
+    Quotient =:= 0,
+    Code is A + Remainder,
+    char_code(Label, Code), 
+    !.
+
+generate_column_label(Index, Label) :-
+    Base is 26,
+    Quotient is (Index - 1) // Base,
+    Remainder is (Index - 1) mod Base,
+    char_code('a', A),
+    FirstCode is A + Quotient - 1,
+    SecondCode is A + Remainder,
+    char_code(First, FirstCode),
+    char_code(Second, SecondCode),
+    atom_codes(Label, [First, Second]).
 
 % Print both grids side by side
 print_side_by_side(Grid1, Grid2, RowMapping) :-
