@@ -319,21 +319,28 @@ validate_move(Grid1, move(Row, Col)) :-
     Symbol = '_ '.
 
 % Executes a move if valid and updates the game state.
-move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping,AI1Level,AI2Level), move(Row, ColLetter), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping,AI1Level,AI2Level)) :-
+move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), move(Row, ColLetter), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level)) :-
     write('Current Player: '), write(CurrentPlayer), nl,
     atom(ColLetter),
     letter_to_index(ColLetter, Col),
-    (   CurrentPlayer = Player1 ->
-            validate_move(Grid1, move(Row, Col)),
-            NextPlayer = Player2,
-            place_symbol_player1('X ', Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2);
-        (Player2 \= 'CPU' , Player2 \= 'CPU2' -> translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol);TranslatedRow is Row,TranslatedCol is Col),
-        validate_move(Grid2, move(TranslatedRow, TranslatedCol)),
-        NextPlayer = Player1,
-        reverseMapping(RowMapping, ReverseRowMapping),
-        reverseMapping(ColMapping, ReverseColMapping),
-        place_symbol_player2('O ', Grid2, Grid1, TranslatedRow, TranslatedCol, ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1)
-    ).
+    CurrentPlayer = Player1,
+    validate_move(Grid1, move(Row, Col)),
+    NextPlayer = Player2,
+    place_symbol_player1('X ', Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2).
+
+move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), move(Row, ColLetter), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level)) :-
+    write('Current Player: '), write(CurrentPlayer), nl,
+    atom(ColLetter),
+    letter_to_index(ColLetter, Col),
+    CurrentPlayer \= Player1,
+    (Player2 \= 'CPU', Player2 \= 'CPU2'),
+    translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
+    validate_move(Grid2, move(TranslatedRow, TranslatedCol)),
+    NextPlayer = Player1,
+    reverseMapping(RowMapping, ReverseRowMapping),
+    reverseMapping(ColMapping, ReverseColMapping),
+    place_symbol_player2('O ', Grid2, Grid1, TranslatedRow, TranslatedCol, ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1).
+
 
 % Places a symbol on both grids according to the mappings.
 
@@ -380,7 +387,10 @@ letter_to_index(i, 9).
 
 % Counts how many lines of 4 or squares a player has in their own grid
 calculate_points(Grid, Player, Player1, Points) :-
-    (Player = Player1 -> Symbol = 'X '; Symbol = 'O '),
+    (Player = Player1,
+     Symbol = 'X '),
+    (Player \= Player1,
+     Symbol = 'O '),
     findall(_, horizontal_lines(Grid, Symbol), Horizontal),
     findall(_, vertical_lines(Grid, Symbol), Vertical),
     findall(_, diagonal_lines(Grid, Symbol), Diagonals),
@@ -494,18 +504,23 @@ game_over(game_state(Grid1, Grid2, _, _, _, _, _, _, _), Winner) :-
     valid_moves(Grid2,Moves2),
     length(Moves2,Lmoves2),
     % No valid moves left for player 2 (he always does last move)
-    (   Lmoves2 = 0 -> 
-        calculate_points(Grid1, player1,player1, Points1),
-        calculate_points(Grid2, player2,player1, Points2),
-        format('Player 1 (X) Points: ~w~n', [Points1]),
-        format('Player 2 (O) Points: ~w~n', [Points2]),
-        (   Points1 = Points2 -> Winner = draw;
-            (   Points1 < Points2 -> Winner = player1;
-                Winner = player2
-            )
-        );
-        fail
-    ).
+    Lmoves2 = 0,
+    calculate_points(Grid1, player1,player1, Points1),
+    calculate_points(Grid2, player2,player1, Points2),
+    format('Player 1 (X) Points: ~w~n', [Points1]),
+    format('Player 2 (O) Points: ~w~n', [Points2]),
+    check_winner(Points1, Points2, Winner).
+
+
+% Determines the winner based on points
+check_winner(Points1, Points2, draw) :-
+    Points1 = Points2.
+
+check_winner(Points1, Points2, player1) :-
+    Points1 < Points2.
+
+check_winner(Points1, Points2, player2) :-
+    Points1 > Points2.
 
 % Evaluates the current game state and returns how bad or good it is for the current player
 value(game_state(Grid1, _, _, _, _, _), Player, Value) :-
@@ -520,12 +535,20 @@ get_best_move(Grid,Points,Difference,Player,Player1,[Move|ListOfMoves],CurrentBe
     Move = move(Row,ColLetter),
     atom(ColLetter),
     letter_to_index(ColLetter,Col),
-    (Player = Player1 -> update_grid(Grid,Row,Col,'X ',NewGrid);update_grid(Grid,Row,Col,'O ',NewGrid)),
+    (Player = Player1, update_grid(Grid, Row, Col, 'X ', NewGrid), Symbol = 'X '),
+    (Player \= Player1, update_grid(Grid, Row, Col, 'O ', NewGrid), Symbol = 'O '),
     calculate_points(NewGrid,Player,Player1,UpdatedPoints),
     NewDifference is UpdatedPoints-Points,
-    (NewDifference =< Difference  ->
-     get_best_move(Grid,Points,NewDifference,Player,Player1,ListOfMoves,Move,BestMove);
-     get_best_move(Grid,Points,Difference,Player,Player1,ListOfMoves,CurrentBest,BestMove)).
+    compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, Move, BestMove, CurrentBest).
+
+% Compares best moves
+compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, Move, BestMove, CurrentBest) :-
+    NewDifference =< Difference,
+    get_best_move(Grid, Points, NewDifference, Player, Player1, ListOfMoves, Move, BestMove).
+
+compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, Move, BestMove, CurrentBest) :-
+    NewDifference > Difference,
+    get_best_move(Grid, Points, Difference, Player, Player1, ListOfMoves, CurrentBest, BestMove).
 
 greedy_move(Grid,Player,Player1,Move) :-
     valid_moves(Grid,ListOfMoves),
@@ -534,8 +557,12 @@ greedy_move(Grid,Player,Player1,Move) :-
         
 % Chooses a move for the computer player based on difficulty level (level 1 should return a random valid move and level 2 the best play with a greedy algorithm)
 choose_move(Grid, Level, Player, Player1, Move) :-
-    (Level = 1 -> random_move(Grid, Move),!;
-     Level = 2 -> greedy_move(Grid,Player,Player1, Move)).
+    Level = 1,
+    random_move(Grid, Move).
+
+choose_move(Grid, Level, Player, Player1, Move) :-
+    Level = 2,
+    greedy_move(Grid,Player,Player1, Move).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Game Loop
