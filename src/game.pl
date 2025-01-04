@@ -642,10 +642,10 @@ handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, Co
 handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
     CurrentPlayer = Player2,
      choose_move(Grid2, AI2Level, CurrentPlayer, Player1, Move),
-     % Replace 1 with AI level if needed
     move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), Move, NewGameState),
-    Move = move(Row,ColLtter),
-    letter_to_index(ColLtter,Col),
+    
+    Move = move(Row,ColLetter),
+    letter_to_index(ColLetter,Col),
     reverseMapping(RowMapping,RRowMapping),
     reverseMapping(ColMapping,RColMapping),
     translate_coordinates(Row,Col,RRowMapping,RColMapping,TranslatedRow,TranslatedCol),
