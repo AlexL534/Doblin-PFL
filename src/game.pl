@@ -19,8 +19,8 @@ main_menu :-
     write('Welcome to Doblin!'), nl,
     get_grid_size(Size),
     display_menu,
-    get_menu_choice(Choice),
-    validate_choice(Choice).
+    get_menu_choice(Choice, Size),
+    validate_choice(Choice, Size).
 
 % display_menu/0
 % Displays the available options in the menu
@@ -32,16 +32,17 @@ display_menu :-
     write('5. Quit'), nl,
     write('Choose an option: '), nl.
 
-% get_menu_choice(+Choice)
-% Reads the user menu choice and handles invalid inputs
-get_menu_choice(Choice) :-
+% get_menu_choice(+Choice, +Size)
+% Reads the user menu choice and handles invalid input using repeat
+get_menu_choice(Choice, Size) :-
     repeat,
     catch(read(Choice), error(syntax_error(_), _), fail),
     integer(Choice),
     (   Choice >= 1,
         Choice =< 5
     ),
-    !.
+    !,
+    true.
 
 % validate_choice(+Choice, +Size)
 % Validates the menu choice and handles it
@@ -134,7 +135,7 @@ get_ai_level(CPUName, Level) :-
 % Validates AI difficulty input
 validate_difficulty(_, 1, 1).
 validate_difficulty(_, 2, 2).
-validate_difficulty(CPUName, _, Level) :-
+validate_difficulty(CPUName, _, _) :-
     write('Invalid difficulty! Please choose 1 or 2.'), nl,
     get_ai_level(CPUName, Level).
 
@@ -185,12 +186,12 @@ display_game(game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, C
     nl,
     print_current_player(CurrentPlayer, Name1, Name2).
 
-print_current_player(CurrentPlayer, Name1, _) :-
+print_current_player(CurrentPlayer, Name1, Name2) :-
     CurrentPlayer = Name1,
     format('Current Player: ~w~n', [Name1]), nl,
     !.
 
-print_current_player(CurrentPlayer, _, Name2) :-
+print_current_player(CurrentPlayer, Name1, Name2) :-
     CurrentPlayer = Name2,
     format('Current Player: ~w~n', [Name2]), nl,
     !.
@@ -325,7 +326,7 @@ validate_move(Grid1, move(Row, Col)) :-
     Symbol = '_ '.
 
 % Executes a move if valid and updates the game state.
-move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), move(Row, ColLetter), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level)) :-
+move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping,AI1Level,AI2Level), move(Row, ColLetter), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping,AI1Level,AI2Level)) :-
     atom(ColLetter),
     letter_to_index(ColLetter, Col),
     handle_player_move(CurrentPlayer, Player1, Row, Col, Grid1, Grid2, RowMapping, ColMapping, NewGrid1, NewGrid2, NextPlayer, Player2, TranslatedRow, TranslatedCol).
