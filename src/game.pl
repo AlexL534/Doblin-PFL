@@ -77,10 +77,6 @@ valid_grid_size(Input, Size) :-
     Input =< 9,
     Size = Input.
 
-valid_grid_size(_) :-
-    write('Invalid grid size! Please choose a size between 6 and 9.'), nl,
-    get_grid_size(_).
-
 % valid_name(+Name)
 % Ensures name does not exceed 16 characters and is not 'CPU'
 valid_name(Name) :-
@@ -115,9 +111,11 @@ configure_game(4, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
 % get_player_name(+PlayerLabel, -Name)
 % Asks for player name and validates it
 get_player_name(PlayerLabel, Name) :-
+    repeat,
     format('Enter name for ~w (only letters and max 16 chars): ', [PlayerLabel]),
     catch(read(Name), error(syntax_error(_), _), fail),
-    valid_name(Name).
+    valid_name(Name),
+    !.
 
 % get_ai_level(+CPUName, -Level)
 % Asks for AI difficulty
