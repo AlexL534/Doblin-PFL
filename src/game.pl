@@ -185,12 +185,12 @@ display_game(game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, C
 
 print_current_player(CurrentPlayer, Name1, Name2) :-
     CurrentPlayer = Name1,
-    format('Current Player: ~w~n', [Name1]),
+    format('Current Player: ~w~n', [Name1]), nl,
     !.
 
 print_current_player(CurrentPlayer, Name1, Name2) :-
     CurrentPlayer = Name2,
-    format('Current Player: ~w~n', [Name2]),
+    format('Current Player: ~w~n', [Name2]), nl,
     !.
 
 print_player_names(Name, Width, Offset) :-
@@ -323,7 +323,6 @@ validate_move(Grid1, move(Row, Col)) :-
 
 % Executes a move if valid and updates the game state.
 move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping,AI1Level,AI2Level), move(Row, ColLetter), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping,AI1Level,AI2Level)) :-
-    write('Current Player: '), write(CurrentPlayer), nl,
     atom(ColLetter),
     letter_to_index(ColLetter, Col),
     handle_player_move(CurrentPlayer, Player1, Row, Col, Grid1, Grid2, RowMapping, ColMapping, NewGrid1, NewGrid2, NextPlayer, Player2, TranslatedRow, TranslatedCol).
@@ -584,13 +583,21 @@ choose_move(Grid, Level, Player, Player1, Move) :-
 % Runs the game loop, alternating turns between players
 game_loop(GameState) :-
     display_game(GameState),
-    (game_over(GameState, Winner) ->
-        announce_winner(Winner),!;
-        current_player_turn(GameState, NewGameState),
-        (   NewGameState = quit -> true;
-            game_loop(NewGameState)
-        )
-    ).
+    check_game_status(GameState).
+
+% Check if the game is over or continue with the next player turn
+check_game_status(GameState) :-
+    game_over(GameState, Winner),
+    !,
+    announce_winner(Winner).
+
+check_game_status(GameState) :-
+    current_player_turn(GameState, NewGameState),
+    handle_next_state(NewGameState).
+
+% Handle the next game state (either quit or continue the loop)
+handle_next_state(quit) :- !.
+handle_next_state(NewGameState) :- game_loop(NewGameState).
 
 announce_winner(Winner) :-
     Winner = draw,
