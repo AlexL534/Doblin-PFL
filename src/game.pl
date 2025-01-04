@@ -319,31 +319,40 @@ validate_move(Grid1, move(Row, Col)) :-
     Symbol = '_ '.
 
 % Executes a move if valid and updates the game state.
-move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), move(Row, ColLetter), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level)) :-
+move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping,AI1Level,AI2Level), move(Row, ColLetter), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping,AI1Level,AI2Level)) :-
     write('Current Player: '), write(CurrentPlayer), nl,
     atom(ColLetter),
     letter_to_index(ColLetter, Col),
+    handle_player_move(CurrentPlayer, Player1, Row, Col, Grid1, Grid2, RowMapping, ColMapping, NewGrid1, NewGrid2, NextPlayer, Player2, TranslatedRow, TranslatedCol).
+
+% Handles Player 1 move
+handle_player_move(CurrentPlayer, Player1, Row, Col, Grid1, Grid2, RowMapping, ColMapping, NewGrid1, NewGrid2, NextPlayer, Player2, TranslatedRow, TranslatedCol) :-
     CurrentPlayer = Player1,
     validate_move(Grid1, move(Row, Col)),
     NextPlayer = Player2,
     place_symbol_player1('X ', Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2).
 
-move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), move(Row, ColLetter), game_state(NewGrid1, NewGrid2, NextPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level)) :-
-    write('Current Player: '), write(CurrentPlayer), nl,
-    atom(ColLetter),
-    letter_to_index(ColLetter, Col),
+% Handles Player 2 move
+handle_player_move(CurrentPlayer, Player1, Row, Col, Grid1, Grid2, RowMapping, ColMapping, NewGrid1, NewGrid2, NextPlayer, Player2, TranslatedRow, TranslatedCol) :-
     CurrentPlayer \= Player1,
-    (Player2 \= 'CPU', Player2 \= 'CPU2'),
-    translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
+    handle_player2_coordinates(Player2, Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
     validate_move(Grid2, move(TranslatedRow, TranslatedCol)),
     NextPlayer = Player1,
     reverseMapping(RowMapping, ReverseRowMapping),
     reverseMapping(ColMapping, ReverseColMapping),
     place_symbol_player2('O ', Grid2, Grid1, TranslatedRow, TranslatedCol, ReverseRowMapping, ReverseColMapping, NewGrid2, NewGrid1).
 
+% Handles translation of coordinates for Player 2 depending on whether they are a CPU or human
+handle_player2_coordinates(Player2, Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol) :-
+    (Player2 = 'CPU' ; Player2 = 'CPU2'),
+    TranslatedRow = Row,
+    TranslatedCol = Col.
+
+handle_player2_coordinates(_, Row, Col, _RowMapping, _ColMapping, TranslatedRow, TranslatedCol) :-
+    TranslatedRow = Row,
+    TranslatedCol = Col.
 
 % Places a symbol on both grids according to the mappings.
-
 place_symbol_player1(Symbol, Grid1, Grid2, Row, Col, RowMapping, ColMapping, NewGrid1, NewGrid2) :-
     update_grid(Grid1, Row, Col, Symbol, NewGrid1),
     translate_coordinates(Row, Col, RowMapping, ColMapping, TranslatedRow, TranslatedCol),
@@ -613,7 +622,6 @@ handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, Co
 
 % Handles a computer player turn
 handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
-    write('Computer is thinking...'), nl,
     (CurrentPlayer = Player1 -> choose_move(Grid1, AI1Level, CurrentPlayer,Player1, Move),write('Used grid1'),nl;
      choose_move(Grid2, AI2Level, CurrentPlayer, Player1, Move),write('Used grid2'),nl),
      % Replace 1 with AI level if needed
