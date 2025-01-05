@@ -426,9 +426,9 @@ letter_to_index(i, 9).
 % Game Logic
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% calculate_points(+Grid, +Player, +Player1, -Points)
+% value(+Grid, +Player, +Player1, -Points)
 % Calculates total points of a player based on how many lines of 4 or squares a player has in their own grid
-calculate_points(Grid, Player, Player1, Points) :-
+value(Grid, Player, Player1, Points) :-
     get_symbol(Player, Player1, Symbol),
     findall(_, horizontal_lines(Grid, Symbol), Horizontal),
     findall(_, vertical_lines(Grid, Symbol), Vertical),
@@ -555,8 +555,8 @@ game_over(game_state(Grid1, Grid2, _, _, _, _, _, _, _), Winner) :-
     length(Moves2, Lmoves2),
     % No valid moves left for player 2 (he always does last move)
     Lmoves2 = 0,
-    calculate_points(Grid1, player1, player1, Points1),
-    calculate_points(Grid2, player2, player1, Points2),
+    value(Grid1, player1, player1, Points1),
+    value(Grid2, player2, player1, Points2),
     format('Player 1 (X) Points: ~w~n', [Points1]),
     format('Player 2 (O) Points: ~w~n', [Points2]),
     check_winner(Points1, Points2, Winner).
@@ -592,7 +592,7 @@ get_best_move(Grid, Points, Difference, Player, Player1, [Move|ListOfMoves], Cur
     letter_to_index(ColLetter, Col),
     get_symbol(Player, Player1, Symbol),
     update_grid(Grid, Row, Col, Symbol, NewGrid), % simulates the move
-    calculate_points(NewGrid, Player, Player1, UpdatedPoints), % calculates the amount of points the player gets when that move is played
+    value(NewGrid, Player, Player1, UpdatedPoints), % calculates the amount of points the player gets when that move is played
     NewDifference is UpdatedPoints-Points, % calculates amout of points gained
     compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, Move, BestMove, CurrentBest).
     
@@ -610,7 +610,7 @@ compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, List
 % Uses the get_best_move predicate to find the move that minimizes points in each turn
 greedy_move(Grid, Player, Player1, Move) :-
     valid_moves(Grid, ListOfMoves),
-    calculate_points(Grid, Player, Player1, Points),
+    value(Grid, Player, Player1, Points),
     get_best_move(Grid, Points, 999, Player, Player1, ListOfMoves, move(-1,-1), Move).
 
 % choose_move(+GameState, +Level, -Move)
