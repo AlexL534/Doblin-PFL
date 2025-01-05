@@ -136,9 +136,11 @@ validate_difficulty(CPUName, _, Level) :-
 % Game State Initialization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% initial_state(+Config, -State)
+% initial_state(+GameConfig, -GameState)
 % Initializes the game state based on the provided configuration
-initial_state(config(Name1, Name2, AI1Level, AI2Level, Size), game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, AI1Level, AI2Level)) :-
+initial_state(GameConfig, game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, AI1Level, AI2Level)) :-
+    GameConfig = config(Name1, Name2, AI1Level, AI2Level, Size),
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, AI1Level, AI2Level),
     CurrentPlayer = Name1,
     initialize_grids(Size, Grid1, Grid2),
     generate_mappings(Size, RowMapping, ColMapping).
