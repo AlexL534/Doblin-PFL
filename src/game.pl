@@ -89,15 +89,15 @@ valid_name(Name) :-
 % configure_game(+Mode, +Size, -GameConfig) :- 
 % Configures the game based on selected mode
 configure_game(1, Size, GameConfig) :- 
-    GameConfig = config(Name1, Name2, _, _, Size),
+    GameConfig = config(Player1, Player2, _, _, Size),
     write('Human vs Human selected.'), nl,
-    get_player_name('Player 1', Name1),
-    get_player_name('Player 2', Name2).
+    get_player_name('Player 1', Player1),
+    get_player_name('Player 2', Player2).
 
 configure_game(2, Size, GameConfig ) :- 
-    GameConfig = config(Name1, 'CPU', _, Level, Size),
+    GameConfig = config(Player1, 'CPU', _, Level, Size),
     write('Human vs Computer selected.'), nl,
-    get_player_name('Player 1', Name1),
+    get_player_name('Player 1', Player1),
     get_ai_level('CPU', Level).
 
 configure_game(3, Size, GameConfig ) :- 
@@ -143,9 +143,9 @@ validate_difficulty(CPUName, _, Level) :-
 % initial_state(+GameConfig, -GameState)
 % Initializes the game state based on the provided configuration
 initial_state(GameConfig, GameState) :-
-    GameConfig = config(Name1, Name2, AI1Level, AI2Level, Size),
-    GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, AI1Level, AI2Level),
-    CurrentPlayer = Name1,
+    GameConfig = config(Player1, Player2, AI1Level, AI2Level, Size),
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
+    CurrentPlayer = Player1,
     initialize_grids(Size, Grid1, Grid2),
     generate_mappings(Size, RowMapping, ColMapping).
 
@@ -182,12 +182,12 @@ generate_mappings(Size, RowMapping, ColMapping) :-
 % Displays the current game state
 
 display_game(GameState) :-
-    GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, _, _),
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, _, _),
     length(Grid1, Size),
     nl,
     Width is Size * 3 - 2,
-    print_player_names(Name1, Width, 2),
-    print_player_names(Name2, Width, Width + 7), nl,  
+    print_player_names(Player1, Width, 2),
+    print_player_names(Player2, Width, Width + 7), nl,  
     print_column_labels(Size, ColMapping), 
     print_side_by_side(Grid1, Grid2, RowMapping),
     nl,
@@ -271,17 +271,17 @@ print_side_by_side(Grid1, Grid2, RowMapping) :-
 % Helper to print rows side by side with correct row numbers
 print_side_by_side_rows([], [], [], []).
 print_side_by_side_rows(Player1Rows, Player2Rows, Player1RowNumbers, Player2RowNumbers) :-
-    last(Player1RowNumbers,Player1Last),
-    length(Player1RowNumbers,SizeP1),
-    nth1(SizeP1,Player1RowNumbers,_,RestPlayer1Rows),
-    last(Player2RowNumbers,Player2Last),
-    length(Player2RowNumbers,SizeP2),
-    nth1(SizeP2,Player2RowNumbers,_,RestPlayer2Rows),
+    last(Player1RowNumbers, Player1Last),
+    length(Player1RowNumbers, SizeP1),
+    nth1(SizeP1, Player1RowNumbers, _, RestPlayer1Rows),
+    last(Player2RowNumbers, Player2Last),
+    length(Player2RowNumbers, SizeP2),
+    nth1(SizeP2, Player2RowNumbers, _, RestPlayer2Rows),
 
-    last(Player1Rows,Row1),
-    last(Player2Rows,Row2),
-    nth1(SizeP1,Player1Rows,_,Rest1),
-    nth1(SizeP2,Player2Rows,_,Rest2),
+    last(Player1Rows, Row1),
+    last(Player2Rows, Row2),
+    nth1(SizeP1, Player1Rows, _, Rest1),
+    nth1(SizeP2, Player2Rows, _, Rest2),
     
     format('~d ', [Player1Last]),  % Correct Player 1 row number
     print_row(Row1),  % Print Player 1 row
@@ -551,12 +551,12 @@ col_to_atom(Col, Letter) :-
 % game_over(+game_state, -Winner)
 % Checks if the game is over and determines the winner
 game_over(game_state(Grid1, Grid2, _, _, _, _, _, _, _), Winner) :-
-    valid_moves(Grid2,Moves2),
-    length(Moves2,Lmoves2),
+    valid_moves(Grid2, Moves2),
+    length(Moves2, Lmoves2),
     % No valid moves left for player 2 (he always does last move)
     Lmoves2 = 0,
-    calculate_points(Grid1, player1,player1, Points1),
-    calculate_points(Grid2, player2,player1, Points2),
+    calculate_points(Grid1, player1, player1, Points1),
+    calculate_points(Grid2, player2, player1, Points2),
     format('Player 1 (X) Points: ~w~n', [Points1]),
     format('Player 2 (O) Points: ~w~n', [Points2]),
     check_winner(Points1, Points2, Winner).
@@ -579,20 +579,20 @@ value(game_state(Grid1, _, _, _, _, _), Player, Value) :-
 
 % random_move(+Grid, -Move)
 % Chooses a random valid move
-random_move(Grid,Move) :-
+random_move(Grid, Move) :-
     valid_moves(Grid, ListOfMoves),
     random_member(Move, ListOfMoves).
 
 % get_best_move(+Grid, +Points, +Difference, +Player, +Player1, +ListOfMoves, +CurrentBest, -BestMove)
 % Finds the best move by simulating all valid moves and selecting the one that minimizes the difference in points
-get_best_move(_,_,_,_,_,[],Move,Move) :-!.
-get_best_move(Grid,Points,Difference,Player,Player1,[Move|ListOfMoves],CurrentBest,BestMove) :-
-    Move = move(Row,ColLetter),
+get_best_move(_, _, _, _, _, [], Move, Move) :-!.
+get_best_move(Grid, Points, Difference, Player, Player1, [Move|ListOfMoves], CurrentBest, BestMove) :-
+    Move = move(Row, ColLetter),
     atom(ColLetter),
-    letter_to_index(ColLetter,Col),
+    letter_to_index(ColLetter, Col),
     get_symbol(Player, Player1, Symbol),
     update_grid(Grid, Row, Col, Symbol, NewGrid), % simulates the move
-    calculate_points(NewGrid,Player,Player1,UpdatedPoints), % calculates the amount of points the player gets when that move is played
+    calculate_points(NewGrid, Player, Player1, UpdatedPoints), % calculates the amount of points the player gets when that move is played
     NewDifference is UpdatedPoints-Points, % calculates amout of points gained
     compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, ListOfMoves, Move, BestMove, CurrentBest).
     
@@ -608,20 +608,22 @@ compare_best_move(NewDifference, Difference, Grid, Points, Player, Player1, List
 
 % greedy_move(+Grid, +Player, +Player1, -Move)
 % Uses the get_best_move predicate to find the move that minimizes points in each turn
-greedy_move(Grid,Player,Player1,Move) :-
-    valid_moves(Grid,ListOfMoves),
-    calculate_points(Grid,Player,Player1,Points),
-    get_best_move(Grid,Points,999,Player,Player1,ListOfMoves,move(-1,-1),Move).
+greedy_move(Grid, Player, Player1, Move) :-
+    valid_moves(Grid, ListOfMoves),
+    calculate_points(Grid, Player, Player1, Points),
+    get_best_move(Grid, Points, 999, Player, Player1, ListOfMoves, move(-1,-1), Move).
 
-% choose_move(+Grid, +Player, +Player1, +Mode, -Move)
+% choose_move(+GameState, +Level, -Move)
 % Chooses the next move based on the selected mode (random or greedy)
-choose_move(Grid, Level, _, _, Move) :-
+choose_move(GameState, Level, Move) :-
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
     Level = 1,
     random_move(Grid, Move).
 
-choose_move(Grid, Level, Player, Player1, Move) :-
+choose_move(GameState, Level, Move) :-
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
     Level = 2,
-    greedy_move(Grid,Player,Player1, Move).
+    greedy_move(Grid, Player, Player1, Move).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -715,24 +717,24 @@ check_input(_, GameState, CurrentPlayer, NewGameState) :-
 % handle_computer_turn(+GameState, -NewGameState)
 % Handles a computer player turn
 handle_computer_turn(GameState, NewGameState) :-
-    GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, AI1Level, AI2Level),
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
     CurrentPlayer = Player1,
-    choose_move(Grid1, AI1Level, CurrentPlayer,Player1, Move),
+    choose_move(GameState, Level, Move),
     % Replace 1 with AI level if needed
     move(GameState, Move, NewGameState),
     format('Computer chose move: ~w~n', [Move]).
 
 handle_computer_turn(GameState, NewGameState) :-
-    GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, AI1Level, AI2Level),
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
     CurrentPlayer = Player2,
-    choose_move(Grid2, AI2Level, CurrentPlayer, Player1, Move),
+    choose_move(GameState, Level, Move),
     move(GameState, Move, NewGameState),
     % operations required to display the move with the grid2 coordinates
-    Move = move(Row,ColLetter),
-    letter_to_index(ColLetter,Col),
-    reverseMapping(RowMapping,RRowMapping),
-    reverseMapping(ColMapping,RColMapping),
-    translate_coordinates(Row,Col,RRowMapping,RColMapping,TranslatedRow,TranslatedCol),
-    col_to_atom(TranslatedCol,TranslatedColLetter),
+    Move = move(Row, ColLetter),
+    letter_to_index(ColLetter, Col),
+    reverseMapping(RowMapping, RRowMapping),
+    reverseMapping(ColMapping, RColMapping),
+    translate_coordinates(Row, Col, RRowMapping, RColMapping, TranslatedRow, TranslatedCol),
+    col_to_atom(TranslatedCol, TranslatedColLetter),
     
-    format('Computer chose move: move(~d,~w)~n', [TranslatedRow,TranslatedColLetter]).
+    format('Computer chose move: move(~d,~w)~n', [TranslatedRow, TranslatedColLetter]).
