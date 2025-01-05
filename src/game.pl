@@ -180,7 +180,9 @@ generate_mappings(Size, RowMapping, ColMapping) :-
 
 % display_game(+GameState)
 % Displays the current game state
-display_game(game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping,_,_)) :-
+
+display_game(GameState) :-
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, _, _),
     length(Grid1, Size),
     nl,
     Width is Size * 3 - 2,
@@ -664,65 +666,67 @@ announce_winner(Winner) :-
 % current_player_turn(+GameState, -NewGameState)
 % Handles current player turn
 current_player_turn(GameState, NewGameState) :-
-    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
-    handle_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
+    GameState = game_state(_, _, CurrentPlayer, _, _, _, _, _, _),
+    handle_turn(GameState, CurrentPlayer, NewGameState).
 
-% handle_turn(+Grid1, +Grid2, +CurrentPlayer, +Player1, +Player2, +RowMapping, +ColMapping, +AI1Level, +AI2Level, -NewGameState)
+% handle_turn(+GameState, +CurrentPlayer, -NewGameState)
 % Handles player turn based on if he is human or computer
-handle_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
+handle_turn(GameState, CurrentPlayer, NewGameState) :-
     CurrentPlayer \= 'CPU',
     CurrentPlayer \= 'CPU1',
     CurrentPlayer \= 'CPU2',
-    handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
+    handle_player_turn(GameState, CurrentPlayer, NewGameState).
 
 % Handle computer turn otherwise for 'CPU'
-handle_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
+handle_turn(GameState, CurrentPlayer, NewGameState) :-
     CurrentPlayer = 'CPU',
-    handle_computer_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
+    handle_computer_turn(GameState, NewGameState).
 
 % Handle computer turn otherwise for 'CPU1'
-handle_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
+handle_turn(GameState, CurrentPlayer, NewGameState) :-
     CurrentPlayer = 'CPU1',
-    handle_computer_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
+    handle_computer_turn(GameState, NewGameState).
 
 % Handle computer turn otherwise for 'CPU2'
-handle_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
+handle_turn(GameState, CurrentPlayer, NewGameState) :-
     CurrentPlayer = 'CPU2',
-    handle_computer_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
+    handle_computer_turn(GameState, NewGameState).
 
-% handle_player_turn(+Grid1, +Grid2, +CurrentPlayer, +Player1, +Player2, +RowMapping, +ColMapping, +AI1Level, +AI2Level, -NewGameState)
+% handle_player_turn(+GameState, +CurrentPlayer, -NewGameState)
 % Handles a human player turn
-handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
+handle_player_turn(GameState, CurrentPlayer, NewGameState) :-
     format('~w, it\'s your turn! Enter your move (Row,Col) or type "quit" to exit: ', [CurrentPlayer]),
     read(Input),
-    check_input(Input, Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
+    check_input(Input, GameState, CurrentPlayer, NewGameState).
 
-% check_input(+Input, +Grid1, +Grid2, +CurrentPlayer, +Player1, +Player2, +RowMapping, +ColMapping, +AI1Level, +AI2Level, -NewGameState)
+% check_input(+Input, +GameState, +CurrentPlayer, -NewGameState)
 % Validates player input (either a move or quit) and performs the corresponding action
-check_input(quit, _, _, CurrentPlayer, _, _, _, _, _, _, quit) :-
+check_input(quit, GameState, CurrentPlayer, quit) :-
     display_quit_message(CurrentPlayer).
 
-check_input(move(Row, Col), Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
-    move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), move(Row, Col), NewGameState),
+check_input(move(Row, Col), GameState, CurrentPlayer, NewGameState) :-
+    move(GameState, move(Row, Col), NewGameState),
     !.
 
-check_input(_, Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
+check_input(_, GameState, CurrentPlayer, NewGameState) :-
     write('Invalid move! Try again.'), nl,
-    handle_player_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState).
+    handle_player_turn(GameState, CurrentPlayer, NewGameState).
     
-% handle_computer_turn(+Grid1, +Grid2, +CurrentPlayer, +Player1, +Player2, +RowMapping, +ColMapping, +AI1Level, +AI2Level, -NewGameState)
+% handle_computer_turn(+GameState, -NewGameState)
 % Handles a computer player turn
-handle_computer_turn(Grid1, Grid2,CurrentPlayer,Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
+handle_computer_turn(GameState, NewGameState) :-
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, AI1Level, AI2Level),
     CurrentPlayer = Player1,
-     choose_move(Grid1, AI1Level, CurrentPlayer,Player1, Move),
-     % Replace 1 with AI level if needed
-    move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), Move, NewGameState),
+    choose_move(Grid1, AI1Level, CurrentPlayer,Player1, Move),
+    % Replace 1 with AI level if needed
+    move(GameState, Move, NewGameState),
     format('Computer chose move: ~w~n', [Move]).
 
-handle_computer_turn(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level, NewGameState) :-
+handle_computer_turn(GameState, NewGameState) :-
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, AI1Level, AI2Level),
     CurrentPlayer = Player2,
-     choose_move(Grid2, AI2Level, CurrentPlayer, Player1, Move),
-    move(game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level), Move, NewGameState),
+    choose_move(Grid2, AI2Level, CurrentPlayer, Player1, Move),
+    move(GameState, Move, NewGameState),
     % operations required to display the move with the grid2 coordinates
     Move = move(Row,ColLetter),
     letter_to_index(ColLetter,Col),
