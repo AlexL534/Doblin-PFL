@@ -625,7 +625,7 @@ choose_move(GameState, Level, Move) :-
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
     Level = 1,
     CurrentPlayer=Player2,
-    random_move(Grid1, Move).
+    random_move(Grid2, Move).
 
 choose_move(GameState, Level, Move) :-
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
