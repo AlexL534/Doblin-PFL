@@ -89,22 +89,22 @@ valid_name(Name) :-
 % configure_game(+Mode, +Size, -GameConfig) :- 
 % Configures the game based on selected mode
 configure_game(1, Size, GameConfig) :- 
-    GameConfig = config(Player1, Player2, _, _, Size),
+    GameConfig = config(Name1, Name2, _, _, Size),
     write('Human vs Human selected.'), nl,
-    get_player_name('Player 1', Player1),
-    get_player_name('Player 2', Player2).
+    get_player_name('Player 1', Name1),
+    get_player_name('Player 2', Name2).
 
 configure_game(2, Size, GameConfig ) :- 
-    GameConfig = config(Player1, 'CPU', _, Level, Size),
+    GameConfig = config(Name1, 'CPU', _, Level, Size),
     write('Human vs Computer selected.'), nl,
-    get_player_name('Player 1', Player1),
+    get_player_name('Player 1', Name1),
     get_ai_level('CPU', Level).
 
 configure_game(3, Size, GameConfig ) :- 
-    GameConfig = config('CPU', Name, Level, _, Size),
+    GameConfig = config('CPU', Name2, Level, _, Size),
     write('Computer vs Human selected.'), nl,
     get_ai_level('CPU', Level),
-    get_player_name('Player 2', Name).
+    get_player_name('Player 2', Name2).
 
 configure_game(4, Size, GameConfig ) :-
     GameConfig = config('CPU1', 'CPU2', Level1, Level2, Size),
@@ -143,9 +143,9 @@ validate_difficulty(CPUName, _, Level) :-
 % initial_state(+GameConfig, -GameState)
 % Initializes the game state based on the provided configuration
 initial_state(GameConfig, GameState) :-
-    GameConfig = config(Player1, Player2, AI1Level, AI2Level, Size),
-    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
-    CurrentPlayer = Player1,
+    GameConfig = config(Name1, Name2, AI1Level, AI2Level, Size),
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, AI1Level, AI2Level),
+    CurrentPlayer = Name1,
     initialize_grids(Size, Grid1, Grid2),
     generate_mappings(Size, RowMapping, ColMapping).
 
@@ -182,12 +182,12 @@ generate_mappings(Size, RowMapping, ColMapping) :-
 % Displays the current game state
 
 display_game(GameState) :-
-    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, _, _),
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, _, _),
     length(Grid1, Size),
     nl,
     Width is Size * 3 - 2,
-    print_player_names(Player1, Width, 2),
-    print_player_names(Player2, Width, Width + 7), nl,  
+    print_player_names(Name1, Width, 2),
+    print_player_names(Name2, Width, Width + 7), nl,  
     print_column_labels(Size, ColMapping), 
     print_side_by_side(Grid1, Grid2, RowMapping),
     nl,
@@ -717,7 +717,7 @@ check_input(_, GameState, CurrentPlayer, NewGameState) :-
 % handle_computer_turn(+GameState, -NewGameState)
 % Handles a computer player turn
 handle_computer_turn(GameState, NewGameState) :-
-    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, AI1Level, AI2Level),
     CurrentPlayer = Player1,
     choose_move(GameState, Level, Move),
     % Replace 1 with AI level if needed
@@ -725,7 +725,7 @@ handle_computer_turn(GameState, NewGameState) :-
     format('Computer chose move: ~w~n', [Move]).
 
 handle_computer_turn(GameState, NewGameState) :-
-    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, AI1Level, AI2Level),
     CurrentPlayer = Player2,
     choose_move(GameState, Level, Move),
     move(GameState, Move, NewGameState),
