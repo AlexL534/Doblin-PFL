@@ -86,24 +86,28 @@ valid_name(Name) :-
     atom_length(Name, Length),
     Length =< 16. 
 
-% configure_game(+Mode, +Size, -Config) :- 
+% configure_game(+Mode, +Size, -GameConfig) :- 
 % Configures the game based on selected mode
-configure_game(1, Size, config(Name1, Name2, _, _, Size)) :- 
+configure_game(1, Size, GameConfig) :- 
+    GameConfig = config(Name1, Name2, _, _, Size),
     write('Human vs Human selected.'), nl,
     get_player_name('Player 1', Name1),
     get_player_name('Player 2', Name2).
 
-configure_game(2, Size, config(Name1, 'CPU', _, Level, Size)) :- 
+configure_game(2, Size, GameConfig ) :- 
+    GameConfig = config(Name1, 'CPU', _, Level, Size),
     write('Human vs Computer selected.'), nl,
     get_player_name('Player 1', Name1),
     get_ai_level('CPU', Level).
 
-configure_game(3, Size, config('CPU', Name, Level, _, Size)) :- 
+configure_game(3, Size, GameConfig ) :- 
+    GameConfig = config('CPU', Name, Level, _, Size),
     write('Computer vs Human selected.'), nl,
     get_ai_level('CPU', Level),
     get_player_name('Player 2', Name).
 
-configure_game(4, Size, config('CPU1', 'CPU2', Level1, Level2, Size)) :-
+configure_game(4, Size, GameConfig ) :-
+    GameConfig = config('CPU1', 'CPU2', Level1, Level2, Size),
     write('Computer vs Computer selected.'), nl,
     get_ai_level('CPU1', Level1),
     get_ai_level('CPU2', Level2).
@@ -138,7 +142,7 @@ validate_difficulty(CPUName, _, Level) :-
 
 % initial_state(+GameConfig, -GameState)
 % Initializes the game state based on the provided configuration
-initial_state(GameConfig, game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, AI1Level, AI2Level)) :-
+initial_state(GameConfig, GameState) :-
     GameConfig = config(Name1, Name2, AI1Level, AI2Level, Size),
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, AI1Level, AI2Level),
     CurrentPlayer = Name1,
