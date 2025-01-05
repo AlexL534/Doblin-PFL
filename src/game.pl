@@ -550,9 +550,10 @@ col_to_atom(Col, Letter) :-
     Letters = [a, b, c, d, e, f, g, h, i],
     nth1(Col, Letters, Letter).
 
-% game_over(+game_state, -Winner)
+% game_over(+GameState, -Winner)
 % Checks if the game is over and determines the winner
-game_over(game_state(Grid1, Grid2, _, _, _, _, _, _, _), Winner) :-
+game_over(GameState, Winner) :-
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
     valid_moves(Grid2, Moves2),
     length(Moves2, Lmoves2),
     % No valid moves left for player 2 (he always does last move)
