@@ -182,12 +182,12 @@ generate_mappings(Size, RowMapping, ColMapping) :-
 % Displays the current game state
 
 display_game(GameState) :-
-    GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, _, _),
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, _, _),
     length(Grid1, Size),
     nl,
     Width is Size * 3 - 2,
-    print_player_names(Name1, Width, 2),
-    print_player_names(Name2, Width, Width + 7), nl,  
+    print_player_names(Player1, Width, 2),
+    print_player_names(Player2, Width, Width + 7), nl,  
     print_column_labels(Size, ColMapping), 
     print_side_by_side(Grid1, Grid2, RowMapping),
     nl,
@@ -731,16 +731,16 @@ check_input(_, GameState, CurrentPlayer, NewGameState) :-
 % handle_computer_turn(+GameState, -NewGameState)
 % Handles a computer player turn
 handle_computer_turn(GameState, NewGameState) :-
-    GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, AI1Level, AI2Level),
-    CurrentPlayer = Name1,
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
+    CurrentPlayer = Player1,
     choose_move(GameState, AI1Level, Move),
     % Replace 1 with AI level if needed
     move(GameState, Move, NewGameState),
     format('Computer chose move: ~w~n', [Move]).
 
 handle_computer_turn(GameState, NewGameState) :-
-    GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, AI1Level, AI2Level),
-    CurrentPlayer = Name2,
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
+    CurrentPlayer = Player2,
     choose_move(GameState, AI2Level, Move),
     move(GameState, Move, NewGameState),
     % operations required to display the move with the grid2 coordinates
