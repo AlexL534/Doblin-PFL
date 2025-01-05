@@ -618,12 +618,26 @@ greedy_move(Grid, Player, Player1, Move) :-
 choose_move(GameState, Level, Move) :-
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
     Level = 1,
-    random_move(Grid, Move).
+    CurrentPlayer=Player1,
+    random_move(Grid1, Move).
+
+choose_move(GameState, Level, Move) :-
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
+    Level = 1,
+    CurrentPlayer=Player2,
+    random_move(Grid1, Move).
 
 choose_move(GameState, Level, Move) :-
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
     Level = 2,
-    greedy_move(Grid, Player, Player1, Move).
+    CurrentPlayer=Player1,
+    greedy_move(Grid1, CurrentPlayer, Player1, Move).
+
+choose_move(GameState, Level, Move) :-
+    GameState = game_state(Grid1, Grid2, CurrentPlayer, Player1, Player2, RowMapping, ColMapping, AI1Level, AI2Level),
+    Level = 2,
+    CurrentPlayer=Player2,
+    greedy_move(Grid2, CurrentPlayer, Player1, Move).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -718,16 +732,16 @@ check_input(_, GameState, CurrentPlayer, NewGameState) :-
 % Handles a computer player turn
 handle_computer_turn(GameState, NewGameState) :-
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, AI1Level, AI2Level),
-    CurrentPlayer = Player1,
-    choose_move(GameState, Level, Move),
+    CurrentPlayer = Name1,
+    choose_move(GameState, AI1Level, Move),
     % Replace 1 with AI level if needed
     move(GameState, Move, NewGameState),
     format('Computer chose move: ~w~n', [Move]).
 
 handle_computer_turn(GameState, NewGameState) :-
     GameState = game_state(Grid1, Grid2, CurrentPlayer, Name1, Name2, RowMapping, ColMapping, AI1Level, AI2Level),
-    CurrentPlayer = Player2,
-    choose_move(GameState, Level, Move),
+    CurrentPlayer = Name2,
+    choose_move(GameState, AI2Level, Move),
     move(GameState, Move, NewGameState),
     % operations required to display the move with the grid2 coordinates
     Move = move(Row, ColLetter),
