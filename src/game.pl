@@ -709,7 +709,7 @@ handle_turn(GameState, CurrentPlayer, NewGameState) :-
 % handle_player_turn(+GameState, +CurrentPlayer, -NewGameState)
 % Handles a human player turn
 handle_player_turn(GameState, CurrentPlayer, NewGameState) :-
-    format('~w, it\'s your turn! Enter your move (Row,Col) or type "quit" to exit: ', [CurrentPlayer]),
+    format('~w, it\'s your turn! Enter your move(Row,Col) or type "quit" to exit: ', [CurrentPlayer]),
     read(Input),
     check_input(Input, GameState, CurrentPlayer, NewGameState).
 
